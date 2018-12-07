@@ -1,0 +1,116 @@
+// Copyright (C) 1991-2013 Altera Corporation
+// Your use of Altera Corporation's design tools, logic functions 
+// and other software and tools, and its AMPP partner logic 
+// functions, and any output files from any of the foregoing 
+// (including device programming or simulation files), and any 
+// associated documentation or information are expressly subject 
+// to the terms and conditions of the Altera Program License 
+// Subscription Agreement, Altera MegaCore Function License 
+// Agreement, or other applicable license agreement, including, 
+// without limitation, that your use is for the sole purpose of 
+// programming logic devices manufactured by Altera and sold by 
+// Altera or its authorized distributors.  Please refer to the 
+// applicable agreement for further details.
+
+// *****************************************************************************
+// This file contains a Verilog test bench template that is freely editable to  
+// suit user's needs .Comments are provided in each section to help the user    
+// fill out necessary details.                                                  
+// *****************************************************************************
+// Generated on "12/06/2018 17:27:23"
+                                                                                
+// Verilog Test Bench template for design : spi_core
+// 
+// Simulation tool : ModelSim-Altera (Verilog)
+// 
+
+`timescale 1 ps/ 1 ps
+module spi_core_vlg_tst();
+// constants                                           
+// general purpose registers
+reg eachvec;
+// test vector input registers
+reg clk;
+reg [31:0] data_from_avalon;
+reg go_transfer;
+reg miso;
+reg reset_n;
+// wires                                               
+wire [7:0]  data_read;
+wire mosi;
+wire sclk;
+wire ss_n;
+
+// assign statements (if any)                          
+spi_core i1 (
+// port map - connection between master ports and signals/registers   
+	.clk(clk),
+	.data_from_avalon(data_from_avalon),
+	.data_read(data_read),
+	.go_transfer(go_transfer),
+	.miso(miso),
+	.mosi(mosi),
+	.reset_n(reset_n),
+	.sclk(sclk),
+	.ss_n(ss_n)
+);
+initial                                                
+	begin                                                  
+		$display("Running testbench");
+			clk <= 1'b0;
+			go_transfer <= 1'b0;
+//			mosi <= 1'b0;
+			reset_n <= 1'b1;
+		$display("Initial complete");                                         
+	end                                                    
+
+//always                                                 
+//// optional sensitivity list                           
+//// @(event1 or event2 or .... eventn)                  
+//begin                                                  
+//// code executes for every event on sensitivity list   
+//// insert code here --> begin                          
+//                                                       
+//@eachvec;                                              
+//// --> end                                             
+//end    
+                                                
+always	#10                                                 
+	begin
+		clk <= ~clk;
+	end   
+	                                                 
+initial
+  begin
+    
+    @(posedge clk)
+      reset_n <= 1'b0;
+    @(posedge clk)
+      reset_n <= 1'b1;
+   @(posedge reset_n) 
+		begin
+			go_transfer <= 1'b1;
+			data_from_avalon <= $random;
+		end
+    @(posedge clk)
+      go_transfer <= 1'b0;
+		
+//		#300
+//		go_transfer <= 1'b0;
+		
+ //    @(posedge go_transfer)
+//			go_transfer <= 1'b0;
+    
+  forever
+    begin
+      @(negedge clk)
+        miso <= $random;
+    end
+    
+//   #200 $stop;   
+
+  end
+	                                                   
+endmodule
+
+
