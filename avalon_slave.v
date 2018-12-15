@@ -12,9 +12,6 @@ module avalon_slave (
 	write_n,
 	write_data,
 	data_write_to_spi
-
-//	go_transfer,data_write_from_avalon,
-//	data_read_to_avalon
 );
 
 // input Avalon 
@@ -26,7 +23,7 @@ input		chip_select;
 // obi4no addressacia bait	///
 // postavit` address
 //
-//input		[]	address;
+//input		[7:0]	address;
 //input		[3:0]	be_n;
 
 // write Avalon 
@@ -182,7 +179,7 @@ always @(negedge clk or negedge reset_n)
 						begin
 							go_transfer <= 1'b0;
 							if(flag_transfer == 1)	// po prihody komandi na c4et4ik ystanavlivaetsia 
-								begin					//			v "7" i idet obratnii ots4et
+								begin						//			v "7" i idet obratnii ots4et
 									cnt_go_transfer <= 3'd7; 
 								end
 						end

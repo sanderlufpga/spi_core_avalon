@@ -1,4 +1,3 @@
-
 module spi_core (
 
 	clk,reset_n,miso,

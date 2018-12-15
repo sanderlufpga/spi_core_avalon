@@ -17,50 +17,59 @@
 // suit user's needs .Comments are provided in each section to help the user    
 // fill out necessary details.                                                  
 // *****************************************************************************
-// Generated on "12/11/2018 16:30:23"
+// Generated on "12/12/2018 16:43:05"
                                                                                 
-// Verilog Test Bench template for design : spi_core
+// Verilog Test Bench template for design : top_spi_avalon
 // 
 // Simulation tool : ModelSim-Altera (Verilog)
 // 
 
-`timescale 1 ps/ 1 ps
-module spi_core_vlg_tst();
+`timescale 10 ps/ 10 ps
+module top_spi_avalon_vlg_tst();
 // constants                                           
 // general purpose registers
-reg eachvec;
+//reg eachvec;
 // test vector input registers
-reg clk;
-reg [31:0] data_write_from_avalon;
-reg go_transfer;
+reg av_chip_select;
+reg av_read_n;
+reg av_write_n;
+//reg clk_50MHz;
+reg clk_120MHz;
 reg miso;
 reg reset_n;
+reg [31:0]  av_write_data;
 // wires                                               
-wire [31:0]  data_read_to_avalon;
+wire [31:0]  av_read_data;
+wire av_wait_request;
 wire mosi;
-wire sclk;
+wire sclk_25MHz;
 wire ss_n;
-wire data_pack_ready;
 
 // assign statements (if any)                          
-spi_core i1 (
+top_spi_avalon i1 (
 // port map - connection between master ports and signals/registers   
-	.clk(clk),
-	.data_read_to_avalon(data_read_to_avalon),
-	.data_write_from_avalon(data_write_from_avalon),
-	.go_transfer(go_transfer),
-	.data_pack_ready(data_pack_ready),
+	.av_chip_select(av_chip_select),
+	.av_read_data(av_read_data),
+	.av_read_n(av_read_n),
+	.av_wait_request(av_wait_request),
+	.av_write_data(av_write_data),
+	.av_write_n(av_write_n),
+//	.clk_50MHz(clk_50MHz),
+	.clk_120MHz(clk_120MHz),
 	.miso(miso),
 	.mosi(mosi),
 	.reset_n(reset_n),
-	.sclk(sclk),
+	.sclk_25MHz(sclk_25MHz),
 	.ss_n(ss_n)
 );
 initial                                                
 	begin                                                  
 		$display("Running testbench");
-			clk <= 1'b0;
-			go_transfer <= 1'b0;
+			clk_120MHz <= 1'b0;
+//			clk_50MHz <= 1'b0;
+			av_chip_select <= 1'b0;
+			av_write_n <= 1'b1;
+			av_read_n <= 1'b1;
 //			mosi <= 1'b0;
 			reset_n <= 1'b1;
 		$display("Initial complete");                                         
@@ -77,40 +86,61 @@ initial
 //// --> end                                             
 //end    
                                                 
-always	#10                                                 
+always	#415                                                 
 	begin
-		clk <= ~clk;
+		clk_120MHz <= ~clk_120MHz;
 	end   
+	                                                 
+//always	#24                                                 
+//	begin
+//		clk_50MHz <= ~clk_50MHz;
+//	end   
 	                                                 
 initial
   begin
     
-    @(posedge clk)
+    @(posedge clk_120MHz)
       reset_n <= 1'b0;
-    @(posedge clk)
+    @(posedge clk_120MHz)
       reset_n <= 1'b1;
    @(posedge reset_n) 
 		begin
-			go_transfer <= 1'b1;
-			data_write_from_avalon <= $random;
+			av_chip_select <= 1'b1;
+			av_write_data <= $random;
 		end
-    @(posedge clk)
-      go_transfer <= 1'b0;
+    @(posedge clk_120MHz)
+      av_write_n <= 1'b0;
+    @(negedge av_wait_request)
+      begin
+			@(posedge clk_120MHz)
+				begin
+					av_write_n <= 1'b1;
+				end
+		end
+	repeat(20)
+      @(negedge clk_120MHz);
 		
-//		#300
-//		go_transfer <= 1'b0;
+	av_read_n <= 1'b0;
+    @(negedge av_wait_request)
+      begin
+			@(posedge clk_120MHz)
+				begin
+					av_read_n <= 1'b1;
+				end
+		end
 		
- //    @(posedge go_transfer)
-//			go_transfer <= 1'b0;
-    
-  forever
-    begin
-      @(negedge clk)
-        miso <= $random;
-    end
-    
-//   #1200 $stop;   
+	repeat(130)
+      @(negedge clk_120MHz);
+	$stop;
+
 
   end
-	                                                   
+  
+	always @(negedge sclk_25MHz)
+		begin
+			miso <= $random;
+		end	
+
+		
 endmodule
+
