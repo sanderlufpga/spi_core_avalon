@@ -1,29 +1,30 @@
 module avalon_slave (
 
-	clk,reset_n,
-//	address,be_n, // poka zacomentim
+	clk,clk_shift,reset_n,
+	address,
+// be_n, 
 	chip_select,
 	wait_request,
 	go_transfer,
-	transfer_complete,
+	data_pack_ready,
 	read_n,
 	read_data,
 	data_read_from_spi,
 	write_n,
 	write_data,
-	data_write_to_spi
+	data_write_to_spi,
+	irq
 );
 
 // input Avalon 
 input		clk;
+input		clk_shift;
 input		reset_n;
 input		chip_select;
 
-// addressoe prostranstvo //// 
+input		[7:0]	address;
+
 // obi4no addressacia bait	///
-// postavit` address
-//
-//input		[7:0]	address;
 //input		[3:0]	be_n;
 
 // write Avalon 
@@ -38,31 +39,53 @@ output	reg	[31:0]	read_data;
 output	reg		wait_request;
 
 //	from SPI
-input		transfer_complete;
+input		data_pack_ready;
 input	[31:0]	data_read_from_spi;
 
 //	to SPI 
 output	reg [31:0]	data_write_to_spi;
 output	reg			go_transfer;
+output	reg			irq;
+
+///////////////////////////////////////////////////////////////////////////////////////
+////////////////
+//////
 
 
+
+
+ assign o_av_wait = !(!(i_av_r|i_av_w) & (r_state == P_IDLE) | (r_state == P_ACK_OUT));
+
+ 
+
+
+////////////////////////////////
 
 //	STATE
 //------------------------------------------------------
 reg        [2:0] cmd_state;
 
-localparam [2:0] IDLE          	= 0;
+localparam [2:0] IDLE          		= 0;
+localparam [2:0] WRITE  				= 1;
+localparam [2:0] WRITE_CMD_READ  	= 2;
+localparam [2:0] READ   				= 3;
+localparam [2:0] READ_STATUS_REG    = 4;
 
-localparam [2:0] WAIT_END_WRITE  = 1;
-localparam [2:0] WAIT_END_READ   = 2;
-localparam [2:0] PAUSE   			= 3;
-localparam [2:0] END_STATE      	= 4;
+
+//	STATUS REGISTR
+//------------------------------------------------------
+reg        [1:0] status_reg;
+
+localparam [1:0] svoboden       		= 0;
+localparam [1:0] idet_zapis			= 1;
+localparam [1:0] idet_4tenie		  	= 2;
+localparam [1:0] data_read_ready	  	= 3;
 
 
 reg	flag_transfer;
+reg	transfer_complete;
 
-
-always @(negedge clk or negedge reset_n)
+always @(posedge clk or negedge reset_n)
 	begin
 		if(reset_n == 1'b0)
 			begin
@@ -72,6 +95,9 @@ always @(negedge clk or negedge reset_n)
 				flag_transfer <= 1'b0;
 				read_data <= 32'b0;
 				data_write_to_spi <= 32'b0;
+				transfer_complete <= 1'b0;
+				status_reg <= svoboden;
+				irq <= 1'b0;
 			end
 		else if (chip_select == 1'b0)
 			begin
@@ -81,75 +107,111 @@ always @(negedge clk or negedge reset_n)
 				flag_transfer <= 1'b0;
 				read_data <= 32'b0;
 				data_write_to_spi <= 32'b0;
+				transfer_complete <= 1'b0;
+				status_reg <= svoboden;
+				irq <= 1'b0;
 			end
 		else
 			begin
+				transfer_complete <= data_pack_ready;
+				///////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////
 				case (cmd_state)
 					IDLE : 
 						begin
 							if (write_n == 1'b0)
 								begin
-									wait_request <= 1'b1;
-									flag_transfer <= 1'b1;
-									data_write_to_spi <= write_data;
-									cmd_state      <=  WAIT_END_WRITE;
+									if (address == 8'hff)
+										begin
+											cmd_state <=  WRITE_CMD_READ;
+											wait_request <= 1'b1;
+											flag_transfer <= 1'b1;
+//											data_write_to_spi <= write_data;
+											status_reg <= idet_4tenie;
+										end
+									else
+										begin
+											cmd_state <= WRITE;
+											wait_request <= 1'b1;
+											flag_transfer <= 1'b1;
+											data_write_to_spi <= write_data;
+											status_reg <= idet_zapis;
+										end
 								end
-							else if(read_n == 1'b0) 
+							if (read_n == 1'b0)
 								begin
-									wait_request <= 1'b1;
-									flag_transfer <= 1'b1;
-									cmd_state      <=  WAIT_END_READ;
+									if (address == 8'hff)
+										begin
+											cmd_state      <=  READ_STATUS_REG;
+											wait_request <= 1'b1;
+											flag_transfer <= 1'b1;
+											read_data [31:0] <= {4{8'ha5}};
+										end
+									else if(status_reg == data_read_ready) //proverka yslovia nado? ili eto reshaet kontroller
+										begin
+											cmd_state      <=  READ;
+											wait_request <= 1'b1;
+											flag_transfer <= 1'b1;
+											irq <= 1'b0; // zaberi dannie
+										end
 								end
-							else
-								begin
-									wait_request <= 1'b0;
-									cmd_state      <=  IDLE;
-								end
-						end
-						
-				  WAIT_END_WRITE : 
-						begin
-							if (transfer_complete == 1'b1)
-								begin
-									cmd_state      <=  	PAUSE;
-								end
-							else 
-								begin
-									flag_transfer <= 1'b0;
-									cmd_state      <=  WAIT_END_WRITE;
-								end
-						end             
-				  WAIT_END_READ : 
-						begin
-							if (transfer_complete == 1'b1)
+							if (status_reg == idet_4tenie && transfer_complete == 1'b1)
 								begin
 									read_data <= data_read_from_spi;
-									cmd_state      <=  PAUSE;
+									status_reg <= data_read_ready; // gotovi dannie dlia 4tenia
+									irq <= 1'b1; // zaberi dannie
 								end
-							else 
+							if (status_reg == idet_zapis && transfer_complete == 1'b1)
 								begin
-									flag_transfer <= 1'b0;
-									cmd_state      <=  WAIT_END_READ;
+									status_reg <= svoboden;
+									// nado irq viveshivat` ili net???
+									// vrode i ne nado
+//									irq <= 1'b1; // dannie zapisani
+									// dlitelnost irq????
 								end
+
+
+//							else
+//								begin
+//									cmd_state      <=  IDLE;
+//								end
+						end
+						
+					WRITE : 
+						begin
+							cmd_state      <=  IDLE;
+							wait_request <= 1'b0;
+							flag_transfer <= 1'b0;
+							status_reg <= idet_zapis; // nado li ono?
+						end             
+					WRITE_CMD_READ : 
+						begin
+							cmd_state      <=  IDLE;
+							wait_request <= 1'b0;
+							flag_transfer <= 1'b0;
+							status_reg <= idet_4tenie; // pod voprosom
+						end             
+					READ : 
+						begin
+							cmd_state      <=  IDLE;
+							wait_request <= 1'b0;
+							flag_transfer <= 1'b0;
+							status_reg <= svoboden;
+						end             
+					READ_STATUS_REG : 
+						begin
+							cmd_state      <=  IDLE;
+							wait_request <= 1'b0;
+							flag_transfer <= 1'b0;
 						end 
 						
-				  PAUSE : 
-						begin
-							if(transfer_complete <= 1'b0)
-								cmd_state      <=  END_STATE;
-						end
-				  END_STATE : 
-						begin
-							wait_request <= 1'b0;
-							cmd_state      <=  IDLE;
-						end
 					default :
 						begin
 							cmd_state      <=  IDLE;
 							wait_request <= 1'b0;
 							flag_transfer <= 1'b0;
+							status_reg <= svoboden;
 						end
-
 				endcase
 			end
 	end

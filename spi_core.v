@@ -1,6 +1,6 @@
 module spi_core (
 
-	clk,reset_n,miso,
+	clk,clk_shift,reset_n,miso,
 	go_transfer,data_write_from_avalon,
 
 	sclk,ss_n,mosi,
@@ -10,12 +10,13 @@ module spi_core (
 
 // input SPI 
 input		clk;
+input		clk_shift;
 input		reset_n;
 input		miso;
 
 // output SPI
 output	reg	sclk;
-output	reg	ss_n;
+output	wire	ss_n;
 output	reg	mosi;
 
 //avalon input
@@ -25,7 +26,6 @@ input	[31:0]	data_write_from_avalon;
 //avalon output
 output	reg [31:0]	data_read_to_avalon;
 output	reg			data_pack_ready;
-
 
 
 //CPOL = 0 — сигнал синхронизации начинается с низкого уровня;
@@ -48,15 +48,19 @@ output	reg			data_pack_ready;
 /////////////////////////////////////////////
 //  only for modelsim, because we had errors
 reg	transfer_complete;
-/////////////////////////////////////
+reg	set_up_transfer;	
+reg	ss;	
 
+/////////////////////////////////////
+assign ss_n = ~ss;
+////////////////////////
 
 reg	[31:0]	data_write;
 reg	[2:0]		cnt_transfer;
 reg	[7:0]		data_spi_write;
 reg	flag_transfer;
 
-always @(negedge clk or negedge reset_n)
+always @(posedge clk_shift or negedge reset_n)
 		begin
 			if(reset_n == 0)
 				begin
@@ -94,7 +98,7 @@ always @(negedge clk or negedge reset_n)
 										data_spi_write[7:0] <= data_write[31:24];
 								endcase
 						end
-					else if (go_transfer == 1'b1)
+					else if (set_up_transfer == 1'b1)
 						begin
 //							flag_transfer <= 1'b1; mogno i tak diagramma sdvinetsia na takt v levo. nado li tak??
 							data_write <= data_write_from_avalon;
@@ -110,7 +114,11 @@ always @(negedge clk or negedge reset_n)
 		end
 
 			
-		
+//	reg	set_up_transfer;	
+always @ (posedge clk or negedge reset_n)
+	begin
+		set_up_transfer <= (reset_n == 1'b0)?(1'b0):(go_transfer);
+	end
 		
 always @ (posedge clk or negedge reset_n)
 	begin
@@ -120,7 +128,7 @@ always @ (posedge clk or negedge reset_n)
 			end
 		else
 			begin
-			  if (ss_n == 1'b0)
+			  if (ss == 1'b1)
 				  sclk <= ~sclk;
 				 else
 				   sclk <= 1'b0;
@@ -136,6 +144,7 @@ reg	[3:0]	cnt_bit;
 reg	takt_transfer;
 reg	go_write;
 reg	go_read;
+//reg	ss;
 //
 
 always @(posedge clk or negedge reset_n)
@@ -143,7 +152,7 @@ always @(posedge clk or negedge reset_n)
 		if(reset_n == 0)
 			begin
 				//obnuliaem
-				ss_n	<= 1'b1;
+				ss	<= 1'b0;
 				mosi <= 1'b0;
 				data_spi_read <= 8'b0;
 				cnt_bit <= 4'b0;
@@ -161,7 +170,7 @@ always @(posedge clk or negedge reset_n)
 								case(takt_transfer)
 								1'b0:	// 1 takt 
 									begin
-										ss_n	<= 1'b0;
+										ss	<= 1'b1;
 										mosi <= data_spi_write[cnt_bit];
 										takt_transfer <= 1'b1;
 									end
@@ -175,7 +184,7 @@ always @(posedge clk or negedge reset_n)
 							end
 						else
 							begin
-								ss_n <= 1'b1;
+								ss <= 1'b0;
 								takt_transfer <= 1'b0;
 								transfer_complete <= 1'b1;
 								case(cnt_transfer)
@@ -193,7 +202,7 @@ always @(posedge clk or negedge reset_n)
 			//edle
 				else
 					begin
-						ss_n <= 1'b1;
+						ss <= 1'b0;
 						cnt_bit 	<= 4'b0;
 						takt_transfer <= 1'b0;
 						transfer_complete <= 1'b0;
