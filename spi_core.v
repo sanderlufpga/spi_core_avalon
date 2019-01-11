@@ -1,6 +1,6 @@
 module spi_core (
 
-	clk,clk_shift,reset_n,miso,
+	clk,reset_n,miso,
 	go_transfer,data_write_from_avalon,
 
 	sclk,ss_n,mosi,
@@ -10,7 +10,6 @@ module spi_core (
 
 // input SPI 
 input		clk;
-input		clk_shift;
 input		reset_n;
 input		miso;
 
@@ -60,7 +59,7 @@ reg	[2:0]		cnt_transfer;
 reg	[7:0]		data_spi_write;
 reg	flag_transfer;
 
-always @(posedge clk_shift or negedge reset_n)
+always @(negedge clk or negedge reset_n)
 		begin
 			if(reset_n == 0)
 				begin

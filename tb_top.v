@@ -11,8 +11,8 @@ module tb_top;
 //reg eachvec;
 // test vector input registers
 reg av_chip_select;
-reg av_read_n;
-reg av_write_n;
+reg av_read;
+reg av_write;
 reg [7:0]	av_address;
 //reg clk_50MHz;
 reg clk_120MHz;
@@ -22,19 +22,18 @@ reg [31:0]  av_write_data;
 // wires                                               
 wire [31:0]  av_read_data;
 wire av_wait_request;
+wire av_wait_request_2;
+wire av_wait_request_3;
 wire mosi;
 wire sclk_25MHz;
 wire ss_n;
-wire clk_120MHz_shift;
 wire clk_50MHz;
-wire clk_50MHz_shift;
+//wire clk_50MHz_shift;
 wire irq;
 
-//wire test_clk_120MHz_shift;
 //wire test_clk_50MHz;
 //wire test_clk_50MHz_shift;
 //wire test_clk_120MHz;
-//wire test_clk_120MHz_shift;
 
 //localparam half_clk = 415;
 //parameter half_clk = 415;
@@ -44,10 +43,12 @@ top_spi_avalon i1 (
 // port map - connection between master ports and signals/registers   
 	.av_chip_select(av_chip_select),
 	.av_read_data(av_read_data),
-	.av_read_n(av_read_n),
+	.av_read(av_read),
 	.av_wait_request(av_wait_request),
+	.av_wait_request_2(av_wait_request_2),
+	.av_wait_request_3(av_wait_request_3),
 	.av_write_data(av_write_data),
-	.av_write_n(av_write_n),
+	.av_write(av_write),
 	.av_address(av_address),
 //	.clk_50MHz(clk_50MHz),
 	.clk_120MHz(clk_120MHz),
@@ -56,14 +57,12 @@ top_spi_avalon i1 (
 	.reset_n(reset_n),
 	.sclk_25MHz(sclk_25MHz),
 	.ss_n(ss_n),
-	.clk_120MHz_shift(clk_120MHz_shift),
 	.clk_50MHz(clk_50MHz),
-	.clk_50MHz_shift(clk_50MHz_shift),
+//	.clk_50MHz_shift(clk_50MHz_shift),
 	.irq(irq)
 //	.test_clk_50MHz(test_clk_50MHz),
 //	.test_clk_50MHz_shift(test_clk_50MHz_shift),
 //	.test_clk_120MHz(test_clk_120MHz),
-//	.test_clk_120MHz_shift(test_clk_120MHz_shift)
 	);
 
 
@@ -87,8 +86,8 @@ initial
 //			clk_120MHz <= 1'b0;
 ////			clk_50MHz <= 1'b0;
 //			av_chip_select <= 1'b0;
-//			av_write_n <= 1'b1;
-//			av_read_n <= 1'b1;
+//			av_write <= 1'b1;
+//			av_read <= 1'b1;
 ////			mosi <= 1'b0;
 //			reset_n <= 1'b1;
 //		$display("Initial complete");                                         
@@ -131,8 +130,8 @@ initial
 initial
   begin
     av_chip_select <= 1'b1;
-	 av_read_n <= 1'b1;
-	 av_write_n <= 1'b1;
+	 av_read <= 1'b0;
+	 av_write <= 1'b0;
 	 av_address <= 8'h0;
 //    @(posedge clk_120MHz)
 //      reset_n <= 1'b0;
@@ -144,48 +143,92 @@ initial
 			av_write_data <= $random;
 		end
     @(posedge clk_120MHz)
-      av_write_n <= 1'b0;
+      av_write <= 1'b1;
     @(negedge av_wait_request)
       begin
 			@(posedge clk_120MHz)
 				begin
-					av_write_n <= 1'b1;
+					av_write <= 1'b0;
 				end
 		end
 
-	repeat(4000)
-      @(negedge clk_120MHz);
+	repeat(40)
+      @(posedge clk_120MHz);
 	
 	av_address <= 8'hff;	
-	av_read_n <= 1'b0;
+	av_read <= 1'b1;
 	
     @(negedge av_wait_request)
       begin
 			@(posedge clk_120MHz)
 				begin
-					av_read_n <= 1'b1;
+					av_read <= 1'b0;
+				end
+		end
+		
+	repeat(40)
+      @(posedge clk_120MHz);
+	
+	av_address <= 8'hff;	
+	av_read <= 1'b1;
+	
+    @(negedge av_wait_request)
+      begin
+			@(posedge clk_120MHz)
+				begin
+					av_read <= 1'b0;
 				end
 		end
 				
 		
-	repeat(4000)
-      @(negedge clk_120MHz);
+	repeat(140)
+      @(posedge clk_120MHz);
 		
 	av_address <= 8'hff;	
 	
 	@(posedge clk_120MHz)
-      av_write_n <= 1'b0;
+      av_write <= 1'b1;
     @(negedge av_wait_request)
       begin
 			@(posedge clk_120MHz)
 				begin
-					av_write_n <= 1'b1;
+					av_write <= 1'b0;
 				end
 		end
+		
+		
+		
+	repeat(40)
+      @(posedge clk_120MHz);
 	
+	av_address <= 8'hff;	
+	av_read <= 1'b1;
+	
+    @(negedge av_wait_request)
+      begin
+			@(posedge clk_120MHz)
+				begin
+					av_read <= 1'b0;
+				end
+		end
+		
+	repeat(40)
+      @(posedge clk_120MHz);
+	
+	av_address <= 8'hff;	
+	av_read <= 1'b1;
+	
+    @(negedge av_wait_request)
+      begin
+			@(posedge clk_120MHz)
+				begin
+					av_read <= 1'b0;
+				end
+		end
+		
 		
 	repeat(130)
-      @(negedge clk_120MHz);
+      @(posedge clk_120MHz);
 	$stop;
 
 
