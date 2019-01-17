@@ -7,8 +7,8 @@ module top_spi_avalon (
 //	av_be_n,
 	av_chip_select,
 	av_wait_request,
-	av_wait_request_2,
-	av_wait_request_3,
+//	av_wait_request_2,
+//	av_wait_request_3,
 	av_read,
 	av_read_data,
 	av_write,
@@ -19,11 +19,7 @@ module top_spi_avalon (
 	ss_n,
 	mosi,
 	clk_50MHz,
-//	clk_50MHz_shift,
 	irq
-//	test_clk_50MHz,
-//	test_clk_50MHz_shift,
-//	test_clk_120MHz,
 );
 
 input		clk_120MHz;
@@ -39,8 +35,8 @@ input		[31:0]	av_write_data;
 
 // output Avalon
 output	av_wait_request;
-output	av_wait_request_2;
-output	av_wait_request_3;
+//output	av_wait_request_2;
+//output	av_wait_request_3;
 
 output	irq;
 output	[31:0]	av_read_data;
@@ -54,15 +50,6 @@ output	ss_n;
 output	mosi;
 
 output	clk_50MHz;
-//output	clk_50MHz_shift;
-
-//output	test_clk_50MHz;
-//output	test_clk_50MHz_shift;
-//output	test_clk_120MHz;
-//
-//assign	test_clk_50MHz = clk_50MHz;
-//assign	test_clk_50MHz_shift = clk_50MHz_shift;
-//assign	test_clk_120MHz = clk_120MHz;
 
 // Wire
 wire	spi_go_transfer;
@@ -73,7 +60,6 @@ wire	[31:0]	data_write_to_spi;
 
 wire	clk_120MHz;
 wire	clk_50MHz;
-//wire	clk_50MHz_shift;
 
 avalon_slave avalon_slave_inst
 (
@@ -83,8 +69,8 @@ avalon_slave avalon_slave_inst
 //	.be_n(av_be_n), 			
 	.chip_select(av_chip_select) ,	// input  chip_select_sig
 	.wait_request(av_wait_request) ,	// output  wait_request_sig
-	.wait_request_2(av_wait_request_2) ,	// output  wait_request_sig
-	.wait_request_3(av_wait_request_3) ,	// output  wait_request_sig
+//	.wait_request_2(av_wait_request_2) ,	// output  wait_request_sig
+//	.wait_request_3(av_wait_request_3) ,	// output  wait_request_sig
 	.go_transfer(spi_go_transfer) ,	// output  go_transfer_sig
 	.data_pack_ready(data_pack_ready) ,	// input  data_pack_ready_sig
 	.read(av_read) ,	// input  read_n_sig
@@ -99,7 +85,6 @@ avalon_slave avalon_slave_inst
 spi_core spi_core_inst
 (
 	.clk(clk_50MHz) ,	// input  clk_sig
-//	.clk_shift(clk_50MHz_shift) ,	// input  clk_sig
 	.reset_n(reset_n) ,	// input  reset_n_sig
 	.miso(miso) ,	// input  miso_sig
 	.go_transfer(spi_go_transfer) ,	// input  go_transfer_sig
@@ -115,7 +100,6 @@ pll	pll_inst
 (
 	.inclk0 ( clk_120MHz ),
 	.c0 ( clk_50MHz )
-//	.c1 (	clk_50MHz_shift )
 );
 
 endmodule

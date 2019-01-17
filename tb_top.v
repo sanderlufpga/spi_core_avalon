@@ -22,8 +22,6 @@ reg [31:0]  av_write_data;
 // wires                                               
 wire [31:0]  av_read_data;
 wire av_wait_request;
-wire av_wait_request_2;
-wire av_wait_request_3;
 wire mosi;
 wire sclk_25MHz;
 wire ss_n;
@@ -45,8 +43,6 @@ top_spi_avalon i1 (
 	.av_read_data(av_read_data),
 	.av_read(av_read),
 	.av_wait_request(av_wait_request),
-	.av_wait_request_2(av_wait_request_2),
-	.av_wait_request_3(av_wait_request_3),
 	.av_write_data(av_write_data),
 	.av_write(av_write),
 	.av_address(av_address),

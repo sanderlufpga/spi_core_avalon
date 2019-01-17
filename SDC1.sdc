@@ -2,34 +2,37 @@
 derive_clock_uncertainty
 create_clock -period 120MHz -name {clk_120MHz} [get_ports {clk_120MHz}]
 derive_pll_clocks
-set_false_path -from [get_registers {avalon_slave:avalon_slave_inst|go_transfer}] -to [get_registers {spi_core:spi_core_inst|data_write[1]}]
-set_false_path -from [get_registers {avalon_slave:avalon_slave_inst|go_transfer}] -to [get_registers {spi_core:spi_core_inst|data_write[2]}]
-set_false_path -from [get_registers {avalon_slave:avalon_slave_inst|go_transfer}] -to [get_registers {spi_core:spi_core_inst|data_write[3]}]
-set_false_path -from [get_registers {avalon_slave:avalon_slave_inst|go_transfer}] -to [get_registers {spi_core:spi_core_inst|data_write[4]}]
-set_false_path -from [get_registers {avalon_slave:avalon_slave_inst|go_transfer}] -to [get_registers {spi_core:spi_core_inst|data_write[5]}]
-set_false_path -from [get_registers {avalon_slave:avalon_slave_inst|go_transfer}] -to [get_registers {spi_core:spi_core_inst|data_write[6]}]
-set_false_path -from [get_registers {avalon_slave:avalon_slave_inst|go_transfer}] -to [get_registers {spi_core:spi_core_inst|data_write[7]}]
-set_false_path -from [get_registers {avalon_slave:avalon_slave_inst|go_transfer}] -to [get_registers {spi_core:spi_core_inst|data_write[8]}]
-set_false_path -from [get_registers {avalon_slave:avalon_slave_inst|go_transfer}] -to [get_registers {spi_core:spi_core_inst|data_write[9]}]
-set_false_path -from [get_registers {avalon_slave:avalon_slave_inst|go_transfer}] -to [get_registers {spi_core:spi_core_inst|data_write[10]}]
-set_false_path -from [get_registers {avalon_slave:avalon_slave_inst|go_transfer}] -to [get_registers {spi_core:spi_core_inst|data_write[11]}]
-set_false_path -from [get_registers {avalon_slave:avalon_slave_inst|go_transfer}] -to [get_registers {spi_core:spi_core_inst|data_write[12]}]
-set_false_path -from [get_registers {avalon_slave:avalon_slave_inst|go_transfer}] -to [get_registers {spi_core:spi_core_inst|data_write[13]}]
-set_false_path -from [get_registers {avalon_slave:avalon_slave_inst|go_transfer}] -to [get_registers {spi_core:spi_core_inst|data_write[14]}]
-set_false_path -from [get_registers {avalon_slave:avalon_slave_inst|go_transfer}] -to [get_registers {spi_core:spi_core_inst|data_write[15]}]
-set_false_path -from [get_registers {avalon_slave:avalon_slave_inst|go_transfer}] -to [get_registers {spi_core:spi_core_inst|data_write[16]}]
-set_false_path -from [get_registers {avalon_slave:avalon_slave_inst|go_transfer}] -to [get_registers {spi_core:spi_core_inst|data_write[17]}]
-set_false_path -from [get_registers {avalon_slave:avalon_slave_inst|go_transfer}] -to [get_registers {spi_core:spi_core_inst|data_write[18]}]
-set_false_path -from [get_registers {avalon_slave:avalon_slave_inst|go_transfer}] -to [get_registers {spi_core:spi_core_inst|data_write[19]}]
-set_false_path -from [get_registers {avalon_slave:avalon_slave_inst|go_transfer}] -to [get_registers {spi_core:spi_core_inst|data_write[20]}]
-set_false_path -from [get_registers {avalon_slave:avalon_slave_inst|go_transfer}] -to [get_registers {spi_core:spi_core_inst|data_write[21]}]
-set_false_path -from [get_registers {avalon_slave:avalon_slave_inst|go_transfer}] -to [get_registers {spi_core:spi_core_inst|data_write[22]}]
-set_false_path -from [get_registers {avalon_slave:avalon_slave_inst|go_transfer}] -to [get_registers {spi_core:spi_core_inst|data_write[23]}]
-set_false_path -from [get_registers {avalon_slave:avalon_slave_inst|go_transfer}] -to [get_registers {spi_core:spi_core_inst|data_write[24]}]
-set_false_path -from [get_registers {avalon_slave:avalon_slave_inst|go_transfer}] -to [get_registers {spi_core:spi_core_inst|data_write[25]}]
-set_false_path -from [get_registers {avalon_slave:avalon_slave_inst|go_transfer}] -to [get_registers {spi_core:spi_core_inst|data_write[26]}]
-set_false_path -from [get_registers {avalon_slave:avalon_slave_inst|go_transfer}] -to [get_registers {spi_core:spi_core_inst|data_write[27]}]
-set_false_path -from [get_registers {avalon_slave:avalon_slave_inst|go_transfer}] -to [get_registers {spi_core:spi_core_inst|data_write[28]}]
-set_false_path -from [get_registers {avalon_slave:avalon_slave_inst|go_transfer}] -to [get_registers {spi_core:spi_core_inst|data_write[29]}]
-set_false_path -from [get_registers {avalon_slave:avalon_slave_inst|go_transfer}] -to [get_registers {spi_core:spi_core_inst|data_write[30]}]
-set_false_path -from [get_registers {avalon_slave:avalon_slave_inst|go_transfer}] -to [get_registers {spi_core:spi_core_inst|data_write[31]}]
+set_clock_groups -exclusive -group {clk_120MHz pll_inst|altpll_component|auto_generated|pll1|clk[0]}
+#set_input_delay 
+
+set_multicycle_path -from [get_registers {avalon_slave:avalon_slave_inst|data_write_to_spi[*]}] -to [get_registers {spi_core:spi_core_inst|data_write[*]}] -setup -start 3
+set_multicycle_path -from [get_registers {avalon_slave:avalon_slave_inst|data_write_to_spi[*]}] -to [get_registers {spi_core:spi_core_inst|data_write[*]}] -hold -start 2
+
+set_multicycle_path -from [get_registers {spi_core:spi_core_inst|data_read_to_avalon[*]}] -to [get_registers {avalon_slave:avalon_slave_inst|read_data[*]}] -setup -end 2
+set_multicycle_path -from [get_registers {spi_core:spi_core_inst|data_read_to_avalon[*]}] -to [get_registers {avalon_slave:avalon_slave_inst|read_data[*]}] -hold -end 1
+
+
+set_multicycle_path -from [get_registers {avalon_slave:avalon_slave_inst|go_transfer}] -to [get_registers {spi_core:spi_core_inst|set_up_transfer~0}] -setup -start 2
+set_multicycle_path -from [get_registers {avalon_slave:avalon_slave_inst|go_transfer}] -to [get_registers {spi_core:spi_core_inst|set_up_transfer~0}] -hold -start 1
+
+
+#set_false_path -from [get_registers {avalon_slave:avalon_slave_inst|go_transfer}] -to [get_registers {spi_core:spi_core_inst|data_write[1]}]
+
+
+
+
+#set_multicycle_path -from [get_registers {spi_core:spi_core_inst|data_pack_ready}] -to [get_registers {avalon_slave:avalon_slave_inst|read_data[*]}] -setup -end 2
+#set_multicycle_path -from [get_registers {spi_core:spi_core_inst|data_pack_ready}] -to [get_registers {avalon_slave:avalon_slave_inst|read_data[*]}] -hold -end 1
+
+#set_multicycle_path -from [get_registers {spi_core:spi_core_inst|data_pack_ready}] -to [get_registers {avalon_slave:avalon_slave_inst|transfer_complete}] -setup -end 2
+#set_multicycle_path -from [get_registers {spi_core:spi_core_inst|data_pack_ready}] -to [get_registers {avalon_slave:avalon_slave_inst|transfer_complete}] -hold -end 1
+
+
+#set_multicycle_path -from [get_registers {spi_core:spi_core_inst|data_read_to_avalon[*]}] -to [get_registers {avalon_slave:avalon_slave_inst|read_data[*]}] -setup -end 2
+#set_multicycle_path -from [get_registers {spi_core:spi_core_inst|data_read_to_avalon[*]}] -to [get_registers {avalon_slave:avalon_slave_inst|read_data[*]}] -hold -end 1
+#
+#set_multicycle_path -from [get_registers {spi_core:spi_core_inst|data_pack_ready}] -to [get_registers {avalon_slave:avalon_slave_inst|transfer_complete}] -setup -end 2
+#set_multicycle_path -from [get_registers {spi_core:spi_core_inst|data_pack_ready}] -to [get_registers {avalon_slave:avalon_slave_inst|transfer_complete}] -hold -end 1
+
+
+

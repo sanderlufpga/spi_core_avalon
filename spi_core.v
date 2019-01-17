@@ -1,6 +1,6 @@
 module spi_core (
 
-	clk,reset_n,miso,
+	clk,clk_shift,reset_n,miso,
 	go_transfer,data_write_from_avalon,
 
 	sclk,ss_n,mosi,
@@ -10,6 +10,7 @@ module spi_core (
 
 // input SPI 
 input		clk;
+input		clk_shift;
 input		reset_n;
 input		miso;
 
@@ -44,9 +45,13 @@ output	reg			data_pack_ready;
 //CPOL = 0 — сигнал синхронизации начинается с низкого уровня;
 //CPHA = 0 — выборка данных производится по переднему фронту сигнала синхронизации;
 
+
+wire transfer_complete;
+assign transfer_complete = (cnt_bit [3]) & (flag_transfer);
+
 /////////////////////////////////////////////
 //  only for modelsim, because we had errors
-reg	transfer_complete;
+//reg	transfer_complete;
 reg	set_up_transfer;	
 reg	ss;	
 
@@ -59,7 +64,7 @@ reg	[2:0]		cnt_transfer;
 reg	[7:0]		data_spi_write;
 reg	flag_transfer;
 
-always @(negedge clk or negedge reset_n)
+always @(posedge clk or negedge reset_n)
 		begin
 			if(reset_n == 0)
 				begin
@@ -156,7 +161,7 @@ always @(posedge clk or negedge reset_n)
 				data_spi_read <= 8'b0;
 				cnt_bit <= 4'b0;
 				takt_transfer <= 1'b0;
-				transfer_complete <= 1'b0;
+//				transfer_complete <= 1'b0;
 				data_read_to_avalon <= 32'b0;
 			end
 		else
@@ -185,7 +190,7 @@ always @(posedge clk or negedge reset_n)
 							begin
 								ss <= 1'b0;
 								takt_transfer <= 1'b0;
-								transfer_complete <= 1'b1;
+//								transfer_complete <= 1'b1;
 								case(cnt_transfer)
 									3'd4:
 										data_read_to_avalon[7:0] <= data_spi_read[7:0];
@@ -204,7 +209,7 @@ always @(posedge clk or negedge reset_n)
 						ss <= 1'b0;
 						cnt_bit 	<= 4'b0;
 						takt_transfer <= 1'b0;
-						transfer_complete <= 1'b0;
+//						transfer_complete <= 1'b0;
 					end
 			end
 		//
