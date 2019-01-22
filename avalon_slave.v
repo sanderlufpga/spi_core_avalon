@@ -12,6 +12,7 @@ module avalon_slave (
 	read,
 	read_data,
 	data_read_from_spi,
+	transfer_complete,
 	write,
 	write_data,
 	data_write_to_spi,
@@ -48,8 +49,14 @@ input	[31:0]	data_read_from_spi;
 
 //	to SPI 
 output	reg [31:0]	data_write_to_spi;
-output	reg			go_transfer;
 output	reg			irq;
+output	wire			go_transfer;
+
+assign go_transfer = flag_transfer;
+
+output	transfer_complete;
+
+
 
 ///////////////////////////////////////////////////////////////////////////////////////
 //assign wait_request_2 = !(!(read|write) & (cmd_state == IDLE));
@@ -95,7 +102,7 @@ always @(posedge clk or negedge reset_n)
 			end
 		else
 			begin
-				spi_trans_compl <= data_pack_ready;
+				spi_trans_compl <= ~data_pack_ready;
 				delay_spi_trans_compl <= spi_trans_compl;
 			end
 	end
@@ -163,6 +170,7 @@ always @(posedge clk or negedge reset_n)
 										begin
 											cmd_state <=  WRITE_CMD_READ;
 											flag_transfer <= 1'b1;
+											data_write_to_spi <= 32'b0;
 											status_reg <= idet_4tenie;
 										end
 									else
@@ -178,13 +186,14 @@ always @(posedge clk or negedge reset_n)
 									if (address == 8'hff)
 										begin
 											cmd_state      <=  READ_STATUS_REG;
-											flag_transfer <= 1'b1;
+//											flag_transfer <= 1'b1;
+//ili dage tak 						flag_transfer <= 1'b0;
 											read_data [31:0] <= {{4{status_reg}},16'b0,{4{status_reg}}};
 										end
 									else if(status_reg == data_read_ready) //proverka yslovia nado? ili eto reshaet kontroller
 										begin
 											cmd_state      <=  READ;
-											flag_transfer <= 1'b1;
+//											flag_transfer <= 1'b1;
 											irq <= 1'b0; // zaberi dannie
 										end
 								end
@@ -228,6 +237,7 @@ always @(posedge clk or negedge reset_n)
 						begin
 							cmd_state      <=  IDLE;
 							flag_transfer <= 1'b0;
+//							status_reg <= status_reg; // nado li tak pisat`????
 						end 
 						
 					default :
@@ -240,37 +250,38 @@ always @(posedge clk or negedge reset_n)
 			end
 	end
 	
-	
-	
-///////////////////////////			
-/////// go_transfer ///////
 
-	reg [2:0]	cnt_go_transfer;
 
-	always @(posedge clk or negedge reset_n)
-		begin
-			if (reset_n == 1'b0)
-				begin
-					go_transfer <= 1'b0;
-					cnt_go_transfer <= 3'd0;
-				end
-			else
-				begin
-					if (cnt_go_transfer > 3'd0)
-						begin
-							cnt_go_transfer <= cnt_go_transfer - 1'b1;
-							go_transfer <= 1'b1;
-						end
-					else
-						begin
-							go_transfer <= 1'b0;
-							if(flag_transfer == 1)	// po prihody komandi na c4et4ik ystanavlivaetsia 
-								begin						//			v "7" i idet obratnii ots4et
-									cnt_go_transfer <= 3'd7; 
-								end
-						end
-				end
-		end
+	
+/////////////////////////////			
+///////// go_transfer ///////
+//
+//	reg [2:0]	cnt_go_transfer;
+//
+//	always @(posedge clk or negedge reset_n)
+//		begin
+//			if (reset_n == 1'b0)
+//				begin
+//					go_transfer <= 1'b0;
+//					cnt_go_transfer <= 3'd0;
+//				end
+//			else
+//				begin
+//					if (cnt_go_transfer > 3'd0)
+//						begin
+//							cnt_go_transfer <= cnt_go_transfer - 1'b1;
+//							go_transfer <= 1'b1;
+//						end
+//					else
+//						begin
+//							go_transfer <= 1'b0;
+//							if(flag_transfer == 1)	// po prihody komandi na c4et4ik ystanavlivaetsia 
+//								begin						//			v "7" i idet obratnii ots4et
+//									cnt_go_transfer <= 3'd7; 
+//								end
+//						end
+//				end
+//		end
 
 
 endmodule

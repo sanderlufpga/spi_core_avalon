@@ -55,6 +55,9 @@ top_spi_avalon i1 (
 	.ss_n(ss_n),
 	.clk_50MHz(clk_50MHz),
 //	.clk_50MHz_shift(clk_50MHz_shift),
+	.test_go_transfer(test_go_transfer),
+	.test_wr_fifo_empty(test_wr_fifo_empty),
+	.test_transfer_complete(test_transfer_complete),
 	.irq(irq)
 //	.test_clk_50MHz(test_clk_50MHz),
 //	.test_clk_50MHz_shift(test_clk_50MHz_shift),
@@ -108,8 +111,8 @@ initial
 	initial //clock generator
 		begin
 			reset_n = 1;
-			 # 5000 reset_n = 0;
-			 # 50000 reset_n = 1;
+			 # 000 reset_n = 0;
+			 # 70000 reset_n = 1;
 		end	
 
 //	initial //clock generator
@@ -175,9 +178,23 @@ initial
 					av_read <= 1'b0;
 				end
 		end
-				
 		
 	repeat(140)
+      @(posedge clk_120MHz);
+	
+	av_address <= 8'hff;	
+	av_read <= 1'b1;
+	
+    @(negedge av_wait_request)
+      begin
+			@(posedge clk_120MHz)
+				begin
+					av_read <= 1'b0;
+				end
+		end
+				
+		
+	repeat(40)
       @(posedge clk_120MHz);
 		
 	av_address <= 8'hff;	

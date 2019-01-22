@@ -5,7 +5,10 @@ module spi_core (
 
 	sclk,ss_n,mosi,
 	data_read_to_avalon,
-	data_pack_ready
+	data_pack_ready,
+	
+	wr_fifo_empty,
+	wr_fifo_req
 );
 
 // input SPI 
@@ -27,6 +30,9 @@ input	[31:0]	data_write_from_avalon;
 output	reg [31:0]	data_read_to_avalon;
 output	reg			data_pack_ready;
 
+// FIFO
+input		wr_fifo_empty;
+output	wr_fifo_req;
 
 //CPOL = 0 — сигнал синхронизации начинается с низкого уровня;
 //CPOL = 1 — сигнал синхронизации начинается с высокого уровня;
@@ -63,6 +69,7 @@ reg	[31:0]	data_write;
 reg	[2:0]		cnt_transfer;
 reg	[7:0]		data_spi_write;
 reg	flag_transfer;
+reg	wr_fifo_req;
 
 always @(posedge clk or negedge reset_n)
 		begin
@@ -73,11 +80,13 @@ always @(posedge clk or negedge reset_n)
 					cnt_transfer <= 3'b0;
 					data_spi_write <= 8'b0;
 					data_pack_ready <= 1'b0;
+					wr_fifo_req <= 1'b0;
 				end
 			else
 				begin
 					if (cnt_transfer > 3'b0)
 						begin
+							wr_fifo_req <= 1'b0;
 							if(transfer_complete == 1'b1)
 								begin
 									flag_transfer <= 1'b0;
@@ -107,22 +116,45 @@ always @(posedge clk or negedge reset_n)
 //							flag_transfer <= 1'b1; mogno i tak diagramma sdvinetsia na takt v levo. nado li tak??
 							data_write <= data_write_from_avalon;
 							cnt_transfer <= 3'd4;
+							wr_fifo_req <= 1'b1;
 						end
 					else
 						begin
 							flag_transfer <= 1'b0;
 							data_pack_ready <= 1'b0;
+							wr_fifo_req <= 1'b0;
 						end
 						
 				end
 		end
-
+		
 			
 //	reg	set_up_transfer;	
 always @ (posedge clk or negedge reset_n)
 	begin
-		set_up_transfer <= (reset_n == 1'b0)?(1'b0):(go_transfer);
+		set_up_transfer <= (reset_n == 1'b0)?(1'b0):(~go_transfer);
 	end
+	
+	
+//reg	spi_trans_compl;
+//reg	delay_spi_trans_compl;
+//
+//always @(posedge clk or negedge reset_n)
+//	begin
+//		if(reset_n == 1'b0)
+//			begin
+//				spi_trans_compl <= 1'b0;
+//				delay_spi_trans_compl <= 1'b0;
+//			end
+//		else
+//			begin
+//				spi_trans_compl <= data_pack_ready;
+//				delay_spi_trans_compl <= spi_trans_compl;
+//			end
+//	end
+//
+//wire	transfer_complete;
+//assign transfer_complete = (reset_n == 0) ? (1'b0) : (~delay_spi_trans_compl & spi_trans_compl);
 		
 always @ (posedge clk or negedge reset_n)
 	begin
