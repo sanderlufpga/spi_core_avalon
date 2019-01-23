@@ -135,7 +135,7 @@ set_instance_assignment -name VIRTUAL_PIN ON -to ss_n
 set_instance_assignment -name VIRTUAL_PIN ON -to av_chip_select
 set_global_assignment -name EDA_TEST_BENCH_NAME tb_top -section_id eda_simulation
 set_global_assignment -name EDA_DESIGN_INSTANCE_NAME NA -section_id tb_top
-set_global_assignment -name EDA_TEST_BENCH_RUN_SIM_FOR "4 us" -section_id tb_top
+set_global_assignment -name EDA_TEST_BENCH_RUN_SIM_FOR "5 us" -section_id tb_top
 set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME tb_top -section_id tb_top
 set_location_assignment PIN_22 -to clk_120MHz
 set_instance_assignment -name VIRTUAL_PIN ON -to irq
@@ -151,6 +151,10 @@ set_global_assignment -name QIP_FILE pll.qip
 set_global_assignment -name VERILOG_TEST_BENCH_FILE simulation/modelsim/top_spi_avalon.vt
 set_global_assignment -name VERILOG_FILE tb_top.v
 set_global_assignment -name SDC_FILE SDC1.sdc
+<<<<<<< HEAD
+set_global_assignment -name QIP_FILE fifo.qip
+=======
+>>>>>>> 07a5dfdf41100bb149d0a123011f54bca2696866
 set_global_assignment -name EDA_TEST_BENCH_FILE simulation/modelsim/top_spi_avalon.vt -section_id top_spi_avalon
 set_global_assignment -name EDA_TEST_BENCH_FILE tb_top.v -section_id tb_top
 set_global_assignment -name QIP_FILE fifo.qip

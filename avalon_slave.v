@@ -145,7 +145,6 @@ always @(posedge clk or negedge reset_n)
 				flag_transfer <= 1'b0;
 				read_data <= 32'b0;
 				data_write_to_spi <= 32'b0;
-//				transfer_complete <= 1'b0;
 				status_reg <= svoboden;
 				irq <= 1'b0;
 			end
@@ -155,7 +154,6 @@ always @(posedge clk or negedge reset_n)
 				flag_transfer <= 1'b0;
 				read_data <= 32'b0;
 				data_write_to_spi <= 32'b0;
-//				transfer_complete <= 1'b0;
 				status_reg <= svoboden;
 				irq <= 1'b0;
 			end
