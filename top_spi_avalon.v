@@ -19,7 +19,6 @@ module top_spi_avalon (
 	ss_n,
 	mosi,
 	clk_50MHz,
-<<<<<<< HEAD
 	irq
 	
 //	test_go_transfer,
@@ -45,28 +44,6 @@ module top_spi_avalon (
 //output	test_rd_fifo_empty;
 //wire	test_rd_fifo_empty;
 //assign	test_rd_fifo_empty = rd_fifo_empty;
-=======
-	irq,
-	
-	test_go_transfer,
-	test_wr_fifo_empty,
-	test_transfer_complete
-);
-
-output	test_go_transfer;
-wire	test_go_transfer;
-assign	test_go_transfer = go_transfer;
-
-
-output	test_wr_fifo_empty;
-wire	test_wr_fifo_empty;
-assign	test_wr_fifo_empty = wr_fifo_empty;
-
-
-output	test_transfer_complete;
-wire	test_transfer_complete;
-assign	test_transfer_complete = transfer_complete;
->>>>>>> 07a5dfdf41100bb149d0a123011f54bca2696866
 
 
 
@@ -129,20 +106,12 @@ avalon_slave avalon_slave_inst
 	.wait_request(av_wait_request) ,	// output  wait_request_sig
 //	.wait_request_2(av_wait_request_2) ,	// output  wait_request_sig
 //	.wait_request_3(av_wait_request_3) ,	// output  wait_request_sig
-<<<<<<< HEAD
 	.go_transfer(wr_fifo_wrreq) ,	// output  go_transfer_sig
-=======
-	.go_transfer(go_transfer) ,	// output  go_transfer_sig
->>>>>>> 07a5dfdf41100bb149d0a123011f54bca2696866
 	.data_pack_ready(rd_fifo_empty) ,	// input  data_pack_ready_sig
 	.read(av_read) ,	// input  read_n_sig
 	.read_data(av_read_data) ,	// output [31:0] read_data_sig
 	.data_read_from_spi(data_read_from_spi) ,	// input [31:0] data_read_from_spi_sig
-<<<<<<< HEAD
 	.transfer_complete(rd_fifo_rdreq),
-=======
-	.transfer_complete(transfer_complete),
->>>>>>> 07a5dfdf41100bb149d0a123011f54bca2696866
 	.write(av_write) ,	// input  write_n_sig
 	.write_data(av_write_data) ,	// input [31:0] write_data_sig
 	.data_write_to_spi(data_write_to_spi), 	// output [31:0] data_write_to_spi_sig
@@ -160,105 +129,54 @@ spi_core spi_core_inst
 	.ss_n(ss_n) ,	// output  ss_n_sig
 	.mosi(mosi) ,	// output  mosi_sig
 	.data_read_to_avalon(data_read_to_avalon) ,	// output [31:0] data_read_to_avalon_sig
-<<<<<<< HEAD
 	.data_pack_ready(rd_fifo_wrreq), 	// output  data_pack_ready_sig
 	.wr_fifo_rdreq(wr_fifo_rdreq)
-=======
-	.data_pack_ready(data_pack_ready), 	// output  data_pack_ready_sig
-	.wr_fifo_req(wr_fifo_req)
->>>>>>> 07a5dfdf41100bb149d0a123011f54bca2696866
 );
 	
 /////////////////////////////////////////////////////////////////////////////////////////
 ////////////// FIFO for WRITE data to SPI	//////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////
-<<<<<<< HEAD
-=======
-	
-wire	wrfull_write;
-wire	wrfull_read;
-
-wire	wr_fifo_req;
->>>>>>> 07a5dfdf41100bb149d0a123011f54bca2696866
 
 wire	reset;
 assign	reset = ~reset_n;
 
-<<<<<<< HEAD
 ////// WRITE FIFO
 wire	wr_fifo_wrreq;
 wire	wr_fifo_full;
 wire	wr_fifo_empty;
 wire	wr_fifo_rdreq;
 
-=======
-//reg	reset;
-//
-//always @ (posedge clk_120MHz)
-//	begin
-//		reset <= ~reset_n;
-//	end
-//
-//always @ (posedge clk or negedge reset_n)
-//	begin
-//		set_up_transfer <= (reset_n == 1'b0)?(1'b0):(~go_transfer);
-//	end
-
-	
->>>>>>> 07a5dfdf41100bb149d0a123011f54bca2696866
  fifo fifo_write_spi(
 	.aclr(reset),
 	
 	.wrclk(clk_120MHz),
-<<<<<<< HEAD
 	.wrreq(wr_fifo_wrreq),
 	.data(data_write_to_spi),
 	.wrfull(wr_fifo_full), // ne ispolzuetsia
 	
 	.rdclk(clk_50MHz),
 	.rdreq(wr_fifo_rdreq),
-=======
-	.wrreq(go_transfer),
-	.data(data_write_to_spi),
-	.wrfull(wrfull_write), // ne zabiit` opisat` 
-	
-	.rdclk(clk_50MHz),
-	.rdreq(wr_fifo_req),
->>>>>>> 07a5dfdf41100bb149d0a123011f54bca2696866
 	.q(data_write_from_avalon),
 	.rdempty(wr_fifo_empty)
 	);
 	
-<<<<<<< HEAD
 	
 ////// WRITE FIFO
 wire	rd_fifo_wrreq;
 wire	rd_fifo_full;
 wire	rd_fifo_empty;
 wire	rd_fifo_rdreq;
-=======
-wire		transfer_complete;
->>>>>>> 07a5dfdf41100bb149d0a123011f54bca2696866
 	
  fifo fifo_read_spi(
 	.aclr(reset),
 	
 	.wrclk(clk_50MHz),
-<<<<<<< HEAD
 	.wrreq(rd_fifo_wrreq),
 	.data(data_read_to_avalon),
 	.wrfull(rd_fifo_full), // ne ispolzuetsia
 	
 	.rdclk(clk_120MHz),
 	.rdreq(rd_fifo_rdreq),
-=======
-	.wrreq(data_pack_ready),
-	.data(data_read_to_avalon),
-	.wrfull(wrfull_read), // ne zabiit` opisat` 
-	
-	.rdclk(clk_120MHz),
-	.rdreq(transfer_complete),
->>>>>>> 07a5dfdf41100bb149d0a123011f54bca2696866
 	.q(data_read_from_spi),
 	.rdempty(rd_fifo_empty)
 	);

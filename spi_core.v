@@ -7,12 +7,7 @@ module spi_core (
 	data_read_to_avalon,
 	data_pack_ready,
 	
-<<<<<<< HEAD
 	wr_fifo_rdreq
-=======
-	wr_fifo_empty,
-	wr_fifo_req
->>>>>>> 07a5dfdf41100bb149d0a123011f54bca2696866
 );
 
 // input SPI 
@@ -35,12 +30,7 @@ output	reg [31:0]	data_read_to_avalon;
 output	reg			data_pack_ready;
 
 // FIFO
-<<<<<<< HEAD
 output	wr_fifo_rdreq;
-=======
-input		wr_fifo_empty;
-output	wr_fifo_req;
->>>>>>> 07a5dfdf41100bb149d0a123011f54bca2696866
 
 //CPOL = 0 — сигнал синхронизации начинается с низкого уровня;
 //CPOL = 1 — сигнал синхронизации начинается с высокого уровня;
@@ -73,11 +63,7 @@ reg	[31:0]	data_write;
 reg	[2:0]		cnt_transfer;
 reg	[7:0]		data_spi_write;
 reg	flag_transfer;
-<<<<<<< HEAD
 reg	wr_fifo_rdreq;
-=======
-reg	wr_fifo_req;
->>>>>>> 07a5dfdf41100bb149d0a123011f54bca2696866
 
 always @(posedge clk or negedge reset_n)
 		begin
@@ -88,21 +74,13 @@ always @(posedge clk or negedge reset_n)
 					cnt_transfer <= 3'b0;
 					data_spi_write <= 8'b0;
 					data_pack_ready <= 1'b0;
-<<<<<<< HEAD
 					wr_fifo_rdreq <= 1'b0;
-=======
-					wr_fifo_req <= 1'b0;
->>>>>>> 07a5dfdf41100bb149d0a123011f54bca2696866
 				end
 			else
 				begin
 					if (cnt_transfer > 3'b0)
 						begin
-<<<<<<< HEAD
 							wr_fifo_rdreq <= 1'b0;
-=======
-							wr_fifo_req <= 1'b0;
->>>>>>> 07a5dfdf41100bb149d0a123011f54bca2696866
 							if(transfer_complete == 1'b1)
 								begin
 									flag_transfer <= 1'b0;
@@ -132,21 +110,13 @@ always @(posedge clk or negedge reset_n)
 //							flag_transfer <= 1'b1; mogno i tak diagramma sdvinetsia na takt v levo. nado li tak??
 							data_write <= data_write_from_avalon;
 							cnt_transfer <= 3'd4;
-<<<<<<< HEAD
 							wr_fifo_rdreq <= 1'b1;
-=======
-							wr_fifo_req <= 1'b1;
->>>>>>> 07a5dfdf41100bb149d0a123011f54bca2696866
 						end
 					else
 						begin
 							flag_transfer <= 1'b0;
 							data_pack_ready <= 1'b0;
-<<<<<<< HEAD
 							wr_fifo_rdreq <= 1'b0;
-=======
-							wr_fifo_req <= 1'b0;
->>>>>>> 07a5dfdf41100bb149d0a123011f54bca2696866
 						end
 						
 				end
@@ -167,7 +137,6 @@ reg	delay_go_transfer_2;
 
 always @(posedge clk or negedge reset_n)
 	begin
-<<<<<<< HEAD
 		if(reset_n == 1'b0)
 			begin
 				delay_go_transfer_1 <= 1'b0;
@@ -184,31 +153,6 @@ wire	set_up_transfer;
 assign set_up_transfer = (reset_n == 0) ? (1'b0) : (~delay_go_transfer_2 & delay_go_transfer_1);
 
 	
-=======
-		set_up_transfer <= (reset_n == 1'b0)?(1'b0):(~go_transfer);
-	end
-	
-	
-//reg	spi_trans_compl;
-//reg	delay_spi_trans_compl;
-//
-//always @(posedge clk or negedge reset_n)
-//	begin
-//		if(reset_n == 1'b0)
-//			begin
-//				spi_trans_compl <= 1'b0;
-//				delay_spi_trans_compl <= 1'b0;
-//			end
-//		else
-//			begin
-//				spi_trans_compl <= data_pack_ready;
-//				delay_spi_trans_compl <= spi_trans_compl;
-//			end
-//	end
-//
-//wire	transfer_complete;
-//assign transfer_complete = (reset_n == 0) ? (1'b0) : (~delay_spi_trans_compl & spi_trans_compl);
->>>>>>> 07a5dfdf41100bb149d0a123011f54bca2696866
 		
 always @ (posedge clk or negedge reset_n)
 	begin

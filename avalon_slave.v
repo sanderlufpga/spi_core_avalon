@@ -124,7 +124,7 @@ localparam [2:0] READ_STATUS_REG    = 4;
 
 
 ////////////////////////////////
-//	STATUS REGISTR
+//	STATUS REGISTER
 //------------------------------------------------------
 reg        [1:0] status_reg;
 

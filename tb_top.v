@@ -55,16 +55,10 @@ top_spi_avalon i1 (
 	.ss_n(ss_n),
 	.clk_50MHz(clk_50MHz),
 //	.clk_50MHz_shift(clk_50MHz_shift),
-<<<<<<< HEAD
 //	.test_go_transfer(test_go_transfer),
 //	.test_wr_fifo_empty(test_wr_fifo_empty),
 //	.test_transfer_complete(test_transfer_complete),
 //	.test_rd_fifo_empty(test_rd_fifo_empty),
-=======
-	.test_go_transfer(test_go_transfer),
-	.test_wr_fifo_empty(test_wr_fifo_empty),
-	.test_transfer_complete(test_transfer_complete),
->>>>>>> 07a5dfdf41100bb149d0a123011f54bca2696866
 	.irq(irq)
 //	.test_clk_50MHz(test_clk_50MHz),
 //	.test_clk_50MHz_shift(test_clk_50MHz_shift),
@@ -118,11 +112,7 @@ initial
 	initial //clock generator
 		begin
 			reset_n = 1;
-<<<<<<< HEAD
 			 # 0 reset_n = 0;
-=======
-			 # 000 reset_n = 0;
->>>>>>> 07a5dfdf41100bb149d0a123011f54bca2696866
 			 # 70000 reset_n = 1;
 		end	
 
