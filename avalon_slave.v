@@ -71,20 +71,24 @@ output	transfer_complete;
 wire wr_rd;
 assign wr_rd = write | read;
 
-reg delay_wr_rd;
+reg delay_wr_rd_1;
+reg delay_wr_rd_2;
+
 always @(posedge clk or negedge reset_n)
 	begin
 		if(reset_n == 1'b0)
 			begin
-				delay_wr_rd <= 1'b0; 
+				delay_wr_rd_1 <= 1'b0; 
+				delay_wr_rd_2 <= 1'b0; 
 			end
 		else
 			begin
-				delay_wr_rd <= wr_rd; 
+				delay_wr_rd_1 <= wr_rd; 
+				delay_wr_rd_2 <= delay_wr_rd_1; 
 			end
 	end
 
-assign wait_request = ~delay_wr_rd & wr_rd;
+assign wait_request = ~delay_wr_rd_1 & wr_rd;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 /////////// videliaem front dlitelnost`u 2 takta iz  data_pack_ready ot drygoi 4astoti
