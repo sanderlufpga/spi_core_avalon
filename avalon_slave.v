@@ -88,7 +88,55 @@ always @(posedge clk or negedge reset_n)
 			end
 	end
 
-assign wait_request = ~delay_wr_rd_1 & wr_rd;
+assign wait_request = ~delay_wr_rd_2 & wr_rd;
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+///// WR /////
+reg delay_wr_1;
+reg delay_wr_2;
+
+always @(posedge clk or negedge reset_n)
+	begin
+		if(reset_n == 1'b0)
+			begin
+				delay_wr_1 <= 1'b0; 
+				delay_wr_2 <= 1'b0; 
+			end
+		else
+			begin
+				delay_wr_1 <= write; 
+				delay_wr_2 <= delay_wr_1; 
+			end
+	end
+
+wire	wr;
+assign wr = (reset_n == 0) ? (1'b0) : (~delay_wr_2 & delay_wr_1);
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////
+///// RD	/////
+reg delay_rd_1;
+reg delay_rd_2;
+
+always @(posedge clk or negedge reset_n)
+	begin
+		if(reset_n == 1'b0)
+			begin
+				delay_rd_1 <= 1'b0; 
+				delay_rd_2 <= 1'b0; 
+			end
+		else
+			begin
+				delay_rd_1 <= read; 
+				delay_rd_2 <= delay_rd_1; 
+			end
+	end
+
+wire	rd;
+assign rd = (reset_n == 0) ? (1'b0) : (~delay_rd_2 & delay_rd_1);
+
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 /////////// videliaem front dlitelnost`u 2 takta iz  data_pack_ready ot drygoi 4astoti
@@ -137,6 +185,192 @@ localparam [1:0] idet_zapis			= 1;
 localparam [1:0] idet_4tenie		  	= 2;
 localparam [1:0] data_read_ready	  	= 3;
 
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+// Quartus II Verilog Template
+// 4-State Mealy state machine
+
+// A Mealy machine has outputs that depend on both the state and 
+// the inputs.  When the inputs change, the outputs are updated
+// immediately, without waiting for a clock edge.  The outputs
+// can be written more than once per state or per clock cycle.
+
+//module four_state_mealy_state_machine
+//(
+//	input	clk, in, reset,
+//	output reg [1:0] out
+//);
+//
+//	// Declare state register
+//	reg		[1:0]state;
+//
+//	// Declare states
+//	parameter S0 = 0, S1 = 1, S2 = 2, S3 = 3;
+//
+//	// Determine the next state synchronously, based on the
+//	// current state and the input
+//	always @ (posedge clk or posedge reset) begin
+//		if (reset)
+//			state <= S0;
+//		else
+//			case (state)
+//				S0:
+//					if (in)
+//					begin
+//						state <= S1;
+//					end
+//					else
+//					begin
+//						state <= S1;
+//					end
+//				S1:
+//					if (in)
+//					begin
+//						state <= S2;
+//					end
+//					else
+//					begin
+//						state <= S1;
+//					end
+//				S2:
+//					if (in)
+//					begin
+//						state <= S3;
+//					end
+//					else
+//					begin
+//						state <= S1;
+//					end
+//				S3:
+//					if (in)
+//					begin
+//						state <= S2;
+//					end
+//					else
+//					begin
+//						state <= S3;
+//					end
+//			endcase
+//	end
+//
+//	// Determine the output based only on the current state
+//	// and the input (do not wait for a clock edge).
+//	always @ (state or in)
+//	begin
+//			case (state)
+//				S0:
+//					if (in)
+//					begin
+//						out = 2'b00;
+//					end
+//					else
+//					begin
+//						out = 2'b10;
+//					end
+//				S1:
+//					if (in)
+//					begin
+//						out = 2'b01;
+//					end
+//					else
+//					begin
+//						out = 2'b00;
+//					end
+//				S2:
+//					if (in)
+//					begin
+//						out = 2'b10;
+//					end
+//					else
+//					begin
+//						out = 2'b01;
+//					end
+//				S3:
+//					if (in)
+//					begin
+//						out = 2'b11;
+//					end
+//					else
+//					begin
+//						out = 2'b00;
+//					end
+//			endcase
+//	end
+//
+//endmodule
+//
+//
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//// Quartus II Verilog Template
+//// 4-State Moore state machine
+//
+//// A Moore machine's outputs are dependent only on the current state.
+//// The output is written only when the state changes.  (State
+//// transitions are synchronous.)
+//
+//module four_state_moore_state_machine
+//(
+//	input	clk, in, reset,
+//	output reg [1:0] out
+//);
+//
+//	// Declare state register
+//	reg		[1:0]state;
+//
+//	// Declare states
+//	parameter S0 = 0, S1 = 1, S2 = 2, S3 = 3;
+//
+//	// Output depends only on the state
+//	always @ (state) begin
+//		case (state)
+//			S0:
+//				out = 2'b01;
+//			S1:
+//				out = 2'b10;
+//			S2:
+//				out = 2'b11;
+//			S3:
+//				out = 2'b00;
+//			default:
+//				out = 2'b00;
+//		endcase
+//	end
+//
+//	// Determine the next state
+//	always @ (posedge clk or posedge reset) begin
+//		if (reset)
+//			state <= S0;
+//		else
+//			case (state)
+//				S0:
+//					state <= S1; // initial or reset
+//				S1:
+//					if (in)
+//						state <= S2;
+//					else
+//						state <= S1;
+//				S2:
+//					if (in)
+//						state <= S3;
+//					else
+//						state <= S1;
+//				S3:
+//					if (in)
+//						state <= S2;
+//					else
+//						state <= S3;
+//			endcase
+//	end
+//
+//endmodule
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
 
 reg	flag_transfer;
 
@@ -166,7 +400,7 @@ always @(posedge clk or negedge reset_n)
 				case (cmd_state)
 					IDLE : 
 						begin
-							if (write == 1'b1)
+							if (wr == 1'b1)
 								begin
 									if (address == 8'hff)
 										begin
@@ -183,7 +417,7 @@ always @(posedge clk or negedge reset_n)
 											status_reg <= idet_zapis;
 										end
 								end
-							if (read == 1'b1)
+							if (rd == 1'b1)
 								begin
 									if (address == 8'hff)
 										begin
