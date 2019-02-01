@@ -1,3 +1,56 @@
+///////////////////////////////////////////////////////////
+////////////////////// REGISTERS //////////////////////////
+///////////////////////////////////////////////////////////
+
+
+//---------------------
+// CONTROL_REGISTER 
+//--------------------
+// ADDRESS --0x00--
+//--------------------
+//	0- CS (CHIP_SELECT)
+// 1- WR (CMD_WRITE_SPI)
+// 2- RD (CMD_READ_SPI)
+// 3- IRQ_RESET
+
+
+//---------------------
+// STATUS_REGISTER 
+//---------------------
+// ADDRESS --0x01--
+//---------------------
+//	0- SVOBODEN
+// 1- IDET_ZAPIS
+// 2- IDET_4TENIE
+// 3- DATA_READ_READY_SPI
+
+
+//---------------------
+// DATA_WRITE_REGISTER 
+//---------------------
+// ADDRESS --0x02--
+//---------------------
+// ALL 32 BIT
+
+
+//---------------------
+// DATA_READ_REGISTER 
+//---------------------
+// ADDRESS --0x03--
+//---------------------
+// ALL 32 BIT
+
+
+//---------------------
+// RESET 
+//---------------------
+// ADDRESS --0x04--
+//---------------------
+// CMD_RESET == 32'b_a5_a5_a5_a5;
+
+
+
+
 module avalon_slave (
 
 	clk,reset_n,
@@ -66,8 +119,9 @@ output	transfer_complete;
 
 
 ///////////////////////////////////////////////////////////////////////////////////////
-/////////// wait_request srazy otve4aem 1 taktom videliaia ego front
-
+/////////// "wait_request" srazy otve4aem 2 taktom videliaia ego front ////////////////
+//-----------------------------------------------------------------------------------//
+///////////////////////////////////////////////////////////////////////////////////////
 wire wr_rd;
 assign wr_rd = write | read;
 
@@ -91,8 +145,10 @@ always @(posedge clk or negedge reset_n)
 assign wait_request = ~delay_wr_rd_2 & wr_rd;
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-///// WR /////
+////////////////
+///// WR ///////
+////////////////
+
 reg delay_wr_1;
 reg delay_wr_2;
 
@@ -114,8 +170,10 @@ wire	wr;
 assign wr = (reset_n == 0) ? (1'b0) : (~delay_wr_2 & delay_wr_1);
 
 
-/////////////////////////////////////////////////////////////////////////////////////////////////
-///// RD	/////
+////////////////
+///// RD	///////
+////////////////
+
 reg delay_rd_1;
 reg delay_rd_2;
 
@@ -138,8 +196,10 @@ assign rd = (reset_n == 0) ? (1'b0) : (~delay_rd_2 & delay_rd_1);
 
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////
-/////////// videliaem front dlitelnost`u 2 takta iz  data_pack_ready ot drygoi 4astoti
+/////////////////////////////////////////////////////////////////////////////////////////
+////// videliaem front dlitelnost`u 1 takt iz  "data_pack_ready" ///////////////////////
+//-------------------------------------------------------------------------------------//
+/////////////////////////////////////////////////////////////////////////////////////////
 
 
 reg	spi_trans_compl;
@@ -163,6 +223,171 @@ wire	transfer_complete;
 assign transfer_complete = (reset_n == 0) ? (1'b0) : (~delay_spi_trans_compl & spi_trans_compl);
 
 
+
+
+////////////////////////////////////////////////////////
+//////////////// STATUS REGISTER ///////////////////////
+//----------------------------------------------------//
+reg        [1:0] status_reg;
+
+localparam [1:0] svoboden       		= 0;
+localparam [1:0] idet_zapis			= 1;
+localparam [1:0] idet_4tenie		  	= 2;
+localparam [1:0] data_read_ready	  	= 3;
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+// Quartus II Verilog Template
+// 4-State Moore state machine
+
+// A Moore machine's outputs are dependent only on the current state.
+// The output is written only when the state changes.  (State
+// transitions are synchronous.)
+
+//module four_state_moore_state_machine
+//(
+//	input	clk, in, reset,
+//	output reg [1:0] out
+//);
+///////////////////////////////////////////////////////////
+////////////////////// REGISTERS //////////////////////////
+///////////////////////////////////////////////////////////
+
+
+//---------------------
+// CONTROL_REGISTER 
+//--------------------
+// ADDRESS --0x00--
+//--------------------
+//	0- CS (CHIP_SELECT)
+// 1- WR (CMD_WRITE_SPI)
+// 2- RD (CMD_READ_SPI)
+// 3- IRQ_RESET
+
+
+//---------------------
+// STATUS_REGISTER 
+//---------------------
+// ADDRESS --0x01--
+//---------------------
+//	0- SVOBODEN
+// 1- IDET_ZAPIS
+// 2- IDET_4TENIE
+// 3- DATA_READ_READY_SPI
+
+
+//---------------------
+// DATA_WRITE_REGISTER 
+//---------------------
+// ADDRESS --0x02--
+//---------------------
+// ALL 32 BIT
+
+
+//---------------------
+// DATA_READ_REGISTER 
+//---------------------
+// ADDRESS --0x03--
+//---------------------
+// ALL 32 BIT
+
+
+// poka ne delaiu
+
+//---------------------
+// RESET 
+//---------------------
+// ADDRESS --0x04--
+//---------------------
+// CMD_RESET == 32'b_a5_a5_a5_a5;
+
+
+
+
+////////////////////////////////
+///////// STATE ///////////////
+//////////////////////////////
+
+// Declare state register
+reg        [2:0] state;
+
+// Declare states
+
+localparam [2:0] RESET		= 0;
+localparam [2:0] IDLE   	= 1;
+localparam [2:0] WRITE		= 2;
+localparam [2:0] READ   	= 3;
+
+	
+reg	[31:0] reg_control;
+reg	[31:0] reg_data_write;
+
+	// Output depends only on the state
+	always @ (state) 
+		begin
+			case (state)
+				RESET:
+					reg_control <= 32'b0;
+					reg_data_write <= 32'b0;
+					read_data <= 32'b0;
+				IDLE:
+//					nothing;
+				WRITE:
+					case (address)
+						8'h0:
+							reg_control <= write_data;
+						8'h2:
+							reg_data_write <= write_data;
+					endcase
+				READ:
+					case (address)
+						8'h1:
+							read_data <= reg_status;
+						8'h3:
+							read_data <= reg_data_read;
+					endcase
+			endcase
+		end
+
+	// Determine the next state
+	always @ (posedge clk or posedge reset_n) begin
+		if (reset_n)
+			state <= RESET;
+		else
+			case (state)
+				RESET:
+					state <= IDLE; // initial or reset
+				IDLE:
+					if (wr == 1'b1)
+						state <= WRITE;
+					else if (rd == 1'b1)
+						state <= READ;
+					else
+						state <= IDLE;
+				WRITE:
+						state <= IDLE;
+				READ:
+						state <= IDLE;
+			endcase
+	end
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+//		if (chip_select == 1'b0)
+//			begin
+//				//
+//			end
+////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
 ////////////////////////////////
 //	STATE
 //------------------------------------------------------
@@ -174,204 +399,6 @@ localparam [2:0] WRITE_CMD_READ  	= 2;
 localparam [2:0] READ   				= 3;
 localparam [2:0] READ_STATUS_REG    = 4;
 
-
-////////////////////////////////
-//	STATUS REGISTER
-//------------------------------------------------------
-reg        [1:0] status_reg;
-
-localparam [1:0] svoboden       		= 0;
-localparam [1:0] idet_zapis			= 1;
-localparam [1:0] idet_4tenie		  	= 2;
-localparam [1:0] data_read_ready	  	= 3;
-
-////////////////////////////////////////////////////////////////////////////////////////////////
-
-// Quartus II Verilog Template
-// 4-State Mealy state machine
-
-// A Mealy machine has outputs that depend on both the state and 
-// the inputs.  When the inputs change, the outputs are updated
-// immediately, without waiting for a clock edge.  The outputs
-// can be written more than once per state or per clock cycle.
-
-//module four_state_mealy_state_machine
-//(
-//	input	clk, in, reset,
-//	output reg [1:0] out
-//);
-//
-//	// Declare state register
-//	reg		[1:0]state;
-//
-//	// Declare states
-//	parameter S0 = 0, S1 = 1, S2 = 2, S3 = 3;
-//
-//	// Determine the next state synchronously, based on the
-//	// current state and the input
-//	always @ (posedge clk or posedge reset) begin
-//		if (reset)
-//			state <= S0;
-//		else
-//			case (state)
-//				S0:
-//					if (in)
-//					begin
-//						state <= S1;
-//					end
-//					else
-//					begin
-//						state <= S1;
-//					end
-//				S1:
-//					if (in)
-//					begin
-//						state <= S2;
-//					end
-//					else
-//					begin
-//						state <= S1;
-//					end
-//				S2:
-//					if (in)
-//					begin
-//						state <= S3;
-//					end
-//					else
-//					begin
-//						state <= S1;
-//					end
-//				S3:
-//					if (in)
-//					begin
-//						state <= S2;
-//					end
-//					else
-//					begin
-//						state <= S3;
-//					end
-//			endcase
-//	end
-//
-//	// Determine the output based only on the current state
-//	// and the input (do not wait for a clock edge).
-//	always @ (state or in)
-//	begin
-//			case (state)
-//				S0:
-//					if (in)
-//					begin
-//						out = 2'b00;
-//					end
-//					else
-//					begin
-//						out = 2'b10;
-//					end
-//				S1:
-//					if (in)
-//					begin
-//						out = 2'b01;
-//					end
-//					else
-//					begin
-//						out = 2'b00;
-//					end
-//				S2:
-//					if (in)
-//					begin
-//						out = 2'b10;
-//					end
-//					else
-//					begin
-//						out = 2'b01;
-//					end
-//				S3:
-//					if (in)
-//					begin
-//						out = 2'b11;
-//					end
-//					else
-//					begin
-//						out = 2'b00;
-//					end
-//			endcase
-//	end
-//
-//endmodule
-//
-//
-//////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////
-//
-//// Quartus II Verilog Template
-//// 4-State Moore state machine
-//
-//// A Moore machine's outputs are dependent only on the current state.
-//// The output is written only when the state changes.  (State
-//// transitions are synchronous.)
-//
-//module four_state_moore_state_machine
-//(
-//	input	clk, in, reset,
-//	output reg [1:0] out
-//);
-//
-//	// Declare state register
-//	reg		[1:0]state;
-//
-//	// Declare states
-//	parameter S0 = 0, S1 = 1, S2 = 2, S3 = 3;
-//
-//	// Output depends only on the state
-//	always @ (state) begin
-//		case (state)
-//			S0:
-//				out = 2'b01;
-//			S1:
-//				out = 2'b10;
-//			S2:
-//				out = 2'b11;
-//			S3:
-//				out = 2'b00;
-//			default:
-//				out = 2'b00;
-//		endcase
-//	end
-//
-//	// Determine the next state
-//	always @ (posedge clk or posedge reset) begin
-//		if (reset)
-//			state <= S0;
-//		else
-//			case (state)
-//				S0:
-//					state <= S1; // initial or reset
-//				S1:
-//					if (in)
-//						state <= S2;
-//					else
-//						state <= S1;
-//				S2:
-//					if (in)
-//						state <= S3;
-//					else
-//						state <= S1;
-//				S3:
-//					if (in)
-//						state <= S2;
-//					else
-//						state <= S3;
-//			endcase
-//	end
-//
-//endmodule
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////
-
 reg	flag_transfer;
 
 always @(posedge clk or negedge reset_n)
@@ -379,15 +406,6 @@ always @(posedge clk or negedge reset_n)
 		if(reset_n == 1'b0)
 			begin
 				//obnuliaem vse
-				cmd_state      <=  IDLE;
-				flag_transfer <= 1'b0;
-				read_data <= 32'b0;
-				data_write_to_spi <= 32'b0;
-				status_reg <= svoboden;
-				irq <= 1'b0;
-			end
-		else if (chip_select == 1'b0)
-			begin
 				cmd_state      <=  IDLE;
 				flag_transfer <= 1'b0;
 				read_data <= 32'b0;
