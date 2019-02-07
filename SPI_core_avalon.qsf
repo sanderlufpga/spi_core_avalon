@@ -135,7 +135,7 @@ set_instance_assignment -name VIRTUAL_PIN ON -to ss_n
 set_instance_assignment -name VIRTUAL_PIN ON -to av_chip_select
 set_global_assignment -name EDA_TEST_BENCH_NAME tb_top -section_id eda_simulation
 set_global_assignment -name EDA_DESIGN_INSTANCE_NAME NA -section_id tb_top
-set_global_assignment -name EDA_TEST_BENCH_RUN_SIM_FOR "5 us" -section_id tb_top
+set_global_assignment -name EDA_TEST_BENCH_RUN_SIM_FOR "20 us" -section_id tb_top
 set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME tb_top -section_id tb_top
 set_location_assignment PIN_22 -to clk_120MHz
 set_instance_assignment -name VIRTUAL_PIN ON -to irq

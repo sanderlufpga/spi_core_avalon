@@ -19,22 +19,23 @@ module top_spi_avalon (
 	ss_n,
 	mosi,
 	clk_50MHz,
-	irq
+	irq,
+	flag_st_a,
 	
-//	test_go_transfer,
-//	test_wr_fifo_empty,
+	test_go_transfer,
+	test_wr_fifo_empty
 //	test_transfer_complete,
 //	test_rd_fifo_empty
 );
 
-//output	test_go_transfer;
-//wire	test_go_transfer;
-//assign	test_go_transfer = go_transfer;
+output	test_go_transfer;
+wire	test_go_transfer;
+assign	test_go_transfer = wr_fifo_wrreq;
 //
 //
-//output	test_wr_fifo_empty;
-//wire	test_wr_fifo_empty;
-//assign	test_wr_fifo_empty = wr_fifo_empty;
+output	test_wr_fifo_empty;
+wire	test_wr_fifo_empty;
+assign	test_wr_fifo_empty = wr_fifo_empty;
 //
 //
 //output	test_transfer_complete;
@@ -75,9 +76,10 @@ output	ss_n;
 output	mosi;
 
 output	clk_50MHz;
+output	[2:0]	flag_st_a;
 
 // Wire
-wire	go_transfer;
+//wire	go_transfer;
 wire	data_pack_ready;
 wire	irq;
 wire	[31:0]	data_write_to_spi;
@@ -85,6 +87,8 @@ wire	[31:0]	data_read_from_spi;
 
 wire	[31:0]	data_read_to_avalon;
 wire	[31:0]	data_write_from_avalon;
+
+wire	[2:0]	flag_st_a;
 
 wire	clk_120MHz;
 wire	clk_50MHz;
@@ -118,7 +122,8 @@ avalon_slave avalon_slave_inst
 	.write(av_write) ,	// input  write_n_sig
 	.write_data(av_write_data) ,	// input [31:0] write_data_sig
 	.data_write_to_spi(data_write_to_spi), 	// output [31:0] data_write_to_spi_sig
-	.irq(irq) 	
+	.irq(irq),
+	.flag_st_a(flag_st_a)
 );
 
 spi_core spi_core_inst
