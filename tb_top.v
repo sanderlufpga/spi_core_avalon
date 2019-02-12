@@ -21,6 +21,7 @@ reg reset_n;
 reg [31:0]  av_write_data;
 // wires                                               
 wire [31:0]  av_read_data;
+wire [2:0]  flag_st_a;
 wire av_wait_request;
 wire mosi;
 wire sclk_25MHz;
@@ -59,10 +60,11 @@ top_spi_avalon i1 (
 	.test_wr_fifo_empty(test_wr_fifo_empty),
 //	.test_transfer_complete(test_transfer_complete),
 //	.test_rd_fifo_empty(test_rd_fifo_empty),
-	.irq(irq)
+	.irq(irq),
 //	.test_clk_50MHz(test_clk_50MHz),
 //	.test_clk_50MHz_shift(test_clk_50MHz_shift),
 //	.test_clk_120MHz(test_clk_120MHz),
+	.flag_st_a(flag_st_a)
 	);
 
 
@@ -145,7 +147,7 @@ initial
 //		begin
 			av_chip_select <= 1'b1;
 			av_write_data <= $random;
-			av_address <= 8'h1;	
+			av_address <= 8'h2;	
 			
 			repeat(120)
 			@(posedge clk_120MHz);
@@ -156,8 +158,6 @@ initial
 //			av_chip_select <= 1'b1;
 //			av_write_data <= $random;
 //		end
-			repeat(40)
-			@(posedge clk_120MHz);
 			
 	
     @(posedge clk_120MHz)
@@ -181,7 +181,8 @@ initial
 			repeat(140)
 			@(posedge clk_120MHz);
 		av_write_data <= 32'h1;
-	repeat(500)
+		
+	repeat(150)
       @(posedge clk_120MHz);
 		
     @(posedge clk_120MHz)
@@ -194,10 +195,10 @@ initial
 				end
 		end
 
-	repeat(4000)
+	repeat(140)
       @(posedge clk_120MHz);
 	
-	av_address <= 8'hff;	
+	av_address <= 8'h01;	
 	av_read <= 1'b1;
 	
     @(negedge av_wait_request)
@@ -208,10 +209,10 @@ initial
 				end
 		end
 		
-	repeat(40)
+	repeat(400)
       @(posedge clk_120MHz);
 	
-	av_address <= 8'hff;	
+	av_address <= 8'h01;	
 	av_read <= 1'b1;
 	
     @(negedge av_wait_request)
@@ -240,7 +241,8 @@ initial
 	repeat(40)
       @(posedge clk_120MHz);
 		
-	av_address <= 8'hff;	
+	av_address <= 8'h00;
+	av_write_data <= 32'b10;
 	
 	@(posedge clk_120MHz)
       av_write <= 1'b1;
@@ -257,7 +259,7 @@ initial
 	repeat(40)
       @(posedge clk_120MHz);
 	
-	av_address <= 8'hff;	
+	av_address <= 8'h01;	
 	av_read <= 1'b1;
 	
     @(negedge av_wait_request)
@@ -271,7 +273,7 @@ initial
 	repeat(40)
       @(posedge clk_120MHz);
 	
-	av_address <= 8'hff;	
+	av_address <= 8'h01;	
 	av_read <= 1'b1;
 	
     @(negedge av_wait_request)
@@ -282,6 +284,33 @@ initial
 				end
 		end
 		
+	repeat(200)
+      @(posedge clk_120MHz);
+	
+	av_address <= 8'h01;	
+	av_read <= 1'b1;
+	
+    @(negedge av_wait_request)
+      begin
+			@(posedge clk_120MHz)
+				begin
+					av_read <= 1'b0;
+				end
+		end
+		
+	repeat(40)
+      @(posedge clk_120MHz);
+	
+	av_address <= 8'h04;	
+	av_read <= 1'b1;
+	
+    @(negedge av_wait_request)
+      begin
+			@(posedge clk_120MHz)
+				begin
+					av_read <= 1'b0;
+				end
+		end
 		
 //	repeat(200)
 //      @(posedge clk_120MHz);

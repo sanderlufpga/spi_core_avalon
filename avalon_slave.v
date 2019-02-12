@@ -11,6 +11,8 @@
 // 0- WR (CMD_WRITE_SPI)
 // 1- RD (CMD_READ_SPI)
 // 2- IRQ_RESET
+// 3- IRQ_WR_ENABLE
+// 4- IRQ_RD_ENABLE
 
 
 //---------------------
@@ -20,7 +22,10 @@
 //---------------------
 // 0- IDET_ZAPIS				//	00- SVOBODEN	//	01- IDET_ZAPIS
 // 1- IDET_4TENIE				//	00- SVOBODEN	//	10- IDET_4TENIE
-// 2- DATA_READ_READY_SPI
+// 2- empty
+// 3- IRQ_WR_READY
+// 4- IRQ_RD_READY
+
 
 
 //---------------------
@@ -67,7 +72,8 @@ module avalon_slave (
 	write,
 	write_data,
 	data_write_to_spi,
-	irq
+	irq,
+	flag_st_a
 );
 
 // input Avalon 
@@ -101,12 +107,14 @@ input	[31:0]	data_read_from_spi;
 //	to SPI 
 output	wire [31:0]	data_write_to_spi;
 output	reg			irq;
-output	reg			go_transfer;
+output	wire			go_transfer;
 
 output	transfer_complete;
+output	[2:0]	flag_st_a;
 
 
-//assign go_transfer = go_write || go_read;
+assign go_transfer = go_write || go_read;
+//assign go_transfer = go_tr;
 
 assign data_write_to_spi = reg_data_write;
 
@@ -201,108 +209,136 @@ assign rd = (reset_n == 0) ? (1'b0) : (~delay_rd_2 & delay_rd_1);
 //////////////////////////////
 
 // Declare state register
-reg        [2:0] state_a;
+reg	[1:0] state_a;
 
 // Declare states
+localparam [1:0] av_RESET		= 0;
+localparam [1:0] av_IDLE   	= 1;
+localparam [1:0] av_WRITE		= 2;
+localparam [1:0] av_READ   	= 3;
 
-//localparam [2:0] av_RESET		= 0;
-//localparam [2:0] av_IDLE   	= 1;
-//localparam [2:0] av_WRITE		= 2;
-//localparam [2:0] av_READ   	= 3;
+// Determine the next state
+	always @ (posedge clk or negedge reset_n) 
+		begin
+			if (reset_n == 1'b0)
+				state_a <= av_RESET;
+			else
+				case (state_a)
+					av_RESET:
+						state_a <= av_IDLE; // initial or reset
+					av_IDLE:
+						if (chip_select == 1'b1)
+							begin
+								if (wr == 1'b1)
+									state_a <= av_WRITE;
+								else if (rd == 1'b1)
+									state_a <= av_READ;
+								else
+									state_a <= av_IDLE;
+							end
+						else
+							state_a <= av_IDLE;
+					av_WRITE:
+							state_a <= av_IDLE;
+					av_READ:
+							state_a <= av_IDLE;
+				endcase
+		end
 
-parameter av_RESET = 0, av_IDLE = 1, av_WRITE = 2, av_READ = 3;
 
-	
-reg	[31:0] reg_control;
-reg	[31:0] reg_data_write;
+reg	[2:0]	flag_st_a;	
 
-	// Output depends only on the state
-//	always @ (posedge clk) 
+// Output depends only on the state
 	always @ (state_a) 
+//	always @ (posedge clk) 
 		begin
 			case (state_a)
 				av_RESET:
 					begin
-						reg_control <= 32'b0;
-						reg_data_write <= 32'b0;
-						read_data <= 32'b0;
+						flag_st_a <= 3'b000;
 					end
 				av_IDLE:
-//					nothing;
+					begin
+						flag_st_a <= 3'b001;
+					end
 				av_WRITE:
 					begin
 						if(address == 8'h0)
 							begin
-								reg_control <= write_data;
+								flag_st_a <= 3'b010;
 							end
 						if(address == 8'h2)
 							begin
-								reg_data_write <= write_data;
+								flag_st_a <= 3'b011;
 							end
-					//
 					end
-//					case (address)
-//						8'h0:
-//							reg_control <= write_data;
-//						8'h2:
-//							reg_data_write <= write_data;
-//					endcase
 				av_READ:
 					begin
 						if(address == 8'h1)
 							begin
-								read_data <= reg_status;
+								flag_st_a <= 3'b100;
 							end
 						if(address == 8'h3)
 							begin
-								read_data <= reg_data_read;
+								flag_st_a <= 3'b101;
 							end
-
-//					case (address)
-//						8'h1:
-//							read_data <= reg_status;
-//						8'h3:
-//							read_data <= reg_data_read;
-//					endcase
 					end
 				default:
 					begin
-						reg_control <= 32'b0;
-						reg_data_write <= 32'b0;
-						read_data <= 32'b0;
+						flag_st_a <= 3'b000;
 					end
-
 			endcase
 		end
 
-	// Determine the next state
-	always @ (posedge clk or negedge reset_n) begin
-		if (reset_n == 1'b0)
-			state_a <= av_RESET;
+		
+		
+reg	[31:0] reg_control;
+reg	[31:0] reg_data_write;
+		
+always @(posedge clk or negedge reset_n)
+	begin
+		if(reset_n == 1'b0)
+			begin
+				reg_control <= 32'b0;
+				reg_data_write <= 32'b0;
+				read_data <= 32'b0;
+			end
+		else	if(delay_go_write == 1'b1)
+//		else	if(go_write == 1'b1)
+			begin
+				reg_control[0] <= 1'b0;	// sbros 'cmd_wr' po "go_write"
+			end
+		else	if(delay_go_read == 1'b1)
+//		else	if(go_read == 1'b1)
+			begin
+				reg_control[1] <= 1'b0;	// sbros 'cmd_rd' po "go_read"
+			end
+		else	if(irq_reset == 1'b1)
+			begin
+				reg_control[2] <= 1'b0;	// sbros 'cmd_irq_reset' po "irq_reset"
+			end
 		else
-			case (state_a)
-				av_RESET:
-					state_a <= av_IDLE; // initial or reset
-				av_IDLE:
-					if (chip_select == 1'b1)
+			begin
+				case(flag_st_a)
+					3'b010: 
 						begin
-							if (wr == 1'b1)
-								state_a <= av_WRITE;
-							else if (rd == 1'b1)
-								state_a <= av_READ;
-							else
-								state_a <= av_IDLE;
+							reg_control <= write_data;
 						end
-					else
-						state_a <= av_IDLE;
-				av_WRITE:
-						state_a <= av_IDLE;
-				av_READ:
-						state_a <= av_IDLE;
-			endcase
+					3'b011: 
+						begin
+							reg_data_write <= write_data;
+						end
+					3'b100: 
+						begin
+							read_data <= reg_status;
+						end
+					3'b101: 
+						begin
+							read_data <= reg_data_read;
+						end
+				endcase
+			end
 	end
-
-
 
 
 
@@ -312,30 +348,23 @@ reg	[31:0] reg_data_write;
 
 reg delay_flag_wr_1;
 reg delay_flag_wr_2;
-reg go_write;
 
 always @(posedge clk or negedge reset_n)
 	begin
 		if(reset_n == 1'b0)
 			begin
 				delay_flag_wr_1 <= 1'b0; 
-				delay_flag_wr_2 <= 1'b0;
-				go_write <= 1'b0;
+				delay_flag_wr_2 <= 1'b0; 
 			end
 		else
 			begin
-//				delay_flag_wr_1 <= reg_control[0]; 
-				delay_flag_wr_2 <= delay_flag_wr_1; 
-				go_write <= ~delay_flag_wr_2 & delay_flag_wr_1;
-				if (reg_control[0] == 1'b1)
-					begin
-						delay_flag_wr_1 <= 1'b1;
-					end
+				delay_flag_wr_1 <= reg_control[0];
+				delay_flag_wr_2 <= delay_flag_wr_1;
 			end
 	end
-
-//wire	go_write;
-//assign go_write = (reset_n == 0) ? (1'b0) : (~delay_flag_wr_2 & delay_flag_wr_1);
+	
+wire	go_write;
+assign go_write = (reset_n == 0) ? (1'b0) : (~delay_flag_wr_2 & delay_flag_wr_1);
 
 
 
@@ -345,27 +374,73 @@ always @(posedge clk or negedge reset_n)
 
 reg delay_flag_rd_1;
 reg delay_flag_rd_2;
-reg go_read;
 
 always @(posedge clk or negedge reset_n)
 	begin
 		if(reset_n == 1'b0)
 			begin
 				delay_flag_rd_1 <= 1'b0; 
-				delay_flag_rd_2 <= 1'b0;
-				go_read <= 1'b0;
+				delay_flag_rd_2 <= 1'b0; 
 			end
 		else
 			begin
-				delay_flag_rd_1 <= reg_control[1]; 
+				delay_flag_rd_1 <= reg_control[1];
 				delay_flag_rd_2 <= delay_flag_rd_1;
-				go_read <= ~delay_flag_rd_2 & delay_flag_rd_1;
+			end
+	end
+	
+wire	go_read;
+assign go_read = (reset_n == 0) ? (1'b0) : (~delay_flag_rd_2 & delay_flag_rd_1);
+
+
+////////////////////////
+///// irq_enable ///////
+////////////////////////
+// reg_control [..]
+// 3- IRQ_WR_ENABLE
+// 4- IRQ_RD_ENABLE
+reg irq_wr_enable;
+reg irq_rd_enable;
+reg irq_reset;
+
+always @(posedge clk or negedge reset_n)
+	begin
+		if(reset_n == 1'b0)
+			begin
+				irq_wr_enable <= 1'b0; 
+				irq_rd_enable <= 1'b0; 
+				irq_reset <= 1'b0; 
+			end
+		else
+			begin
+				irq_wr_enable <= reg_control[3];
+				irq_rd_enable <= reg_control[4];
+				irq_reset <= reg_control[2];
 			end
 	end
 
-//wire	go_read;
-//assign go_read = (reset_n == 0) ? (1'b0) : (~delay_flag_rd_2 & delay_flag_rd_1);
+	
+	
+///////////////////////////////////////////////
+/// 'delay_go_read' or 'delay_go_write' ///////
+///////////////////////////////////////////////
 
+reg delay_go_write;
+reg delay_go_read;
+
+always @(posedge clk or negedge reset_n)
+	begin
+		if(reset_n == 1'b0)
+			begin
+				delay_go_write <= 1'b0; 
+				delay_go_read <= 1'b0; 
+			end
+		else
+			begin
+				delay_go_write <= go_write;
+				delay_go_read <= go_read;
+			end
+	end
 
 
 //////////////////////////
@@ -380,83 +455,20 @@ always @(posedge clk or negedge reset_n)
 // The output is written only when the state changes.  (State
 // transitions are synchronous.)
 
-	// Declare state register
+// Declare state register
 reg	[2:0] state_s;
 reg	[1:0] status;
 //	reg	data_rd_rdy;
 	
-	// Declare states
-//localparam [2:0] RESET_S		= 0;
-//localparam [2:0] IDLE_S   		= 1;
-//localparam [2:0] WRITE_S		= 2;
-//localparam [2:0] READ_S   		= 3;
-//localparam [2:0] WRITE_END_S	= 4;
-//localparam [2:0] READ_END_S   = 5;
+// Declare states
+localparam [2:0] RESET_S		= 0;
+localparam [2:0] IDLE_S   		= 1;
+localparam [2:0] WRITE_S		= 2;
+localparam [2:0] READ_S   		= 3;
+localparam [2:0] WRITE_END_S	= 4;
+localparam [2:0] READ_END_S   = 5;
 
-parameter RESET_S = 0, IDLE_S = 1, WRITE_S = 2, READ_S = 3, WRITE_END_S = 4, READ_END_S = 5;
-
-reg	[31:0] reg_status;
-reg	[31:0] reg_data_read;
-
-reg	go_tr;
-
-	// Output depends only on the state
-//	always @ (posedge clk) 
-	always @ (state_s) 
-		begin
-			case (state_s)
-				RESET_S:
-					begin
-						status <= 2'b00;
-						go_tr <= 1'b0;
-					end
-	//				data_rd_rdy = 1'b0;
-				IDLE_S:
-					begin
-						status <= 2'b00;
-						go_tr <= 1'b0;
-					end
-	//				data_rd_rdy = 1'b0;
-				WRITE_S:
-					begin
-						status <= 2'b01;
-						go_tr <= 1'b1;
-					end
-	//				data_rd_rdy = 1'b0;
-				READ_S:
-					begin
-						status <= 2'b10;
-						go_tr <= 1'b1;
-					end
-				WRITE_END_S:
-					begin
-						status <= 2'b01;
-						go_tr <= 1'b0;
-					end
-				READ_END_S:
-					begin
-						if (transfer_complete)
-							begin
-								status <= 2'b11; // dopisat 4to eto dannie gotovi
-								go_tr <= 1'b0;
-								reg_data_read <= data_read_from_spi;
-							end
-						else
-							begin
-								status <= 2'b10;
-								go_tr <= 1'b0;
-							end
-					end
-				default:
-					begin
-						status = 2'b00;
-						go_tr <= 1'b0;
-					end
-//					data_rd_rdy = 1'b0;
-			endcase
-		end
-
-	// Determine the next state
+// Determine the next state
 	always @ (posedge clk or negedge reset_n) 
 		begin
 			if (reset_n == 0)
@@ -486,35 +498,139 @@ reg	go_tr;
 							state_s <= IDLE_S;
 						else
 							state_s <= READ_END_S;
-	//				st_irq_reset:
-						
 				endcase
 		end
 
+reg	go_tr;
+reg	[31:0] reg_data_read;
 
-//////////////////////////////////////////////////////////
-////////////////// STATUS REGISTER ///////////////////////
-////----------------------------------------------------//
-//reg        [1:0] status_reg;
-//
-//localparam [1:0] svoboden       		= 0;
-//localparam [1:0] idet_zapis			= 1;
-//localparam [1:0] idet_4tenie		  	= 2;
-//localparam [1:0] data_read_ready	  	= 3;
+// Output depends only on the state
+	always @ (posedge clk) 
+//	always @ (state_s) 
+		begin
+			case (state_s)
+				RESET_S:
+					begin
+						status <= 2'b00;
+						go_tr <= 1'b0;
+					end
+				IDLE_S:
+					begin
+						status <= 2'b00;
+						go_tr <= 1'b0;
+					end
+				WRITE_S:
+					begin
+						status <= 2'b01;
+						go_tr <= 1'b1;
+					end
+				READ_S:
+					begin
+						status <= 2'b10;
+						go_tr <= 1'b1;
+					end
+				WRITE_END_S:
+					begin
+						status <= 2'b01;
+						go_tr <= 1'b0;
+					end
+				READ_END_S:
+					begin
+						status <= 2'b10;
+						go_tr <= 1'b0;
+					end
+				default:
+					begin
+						status = 2'b00;
+						go_tr <= 1'b0;
+					end
+			endcase
+		end
 
-////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////
+		
+//---------------------
+// STATUS_REGISTER 
+//---------------------
+// ADDRESS --0x01--
+//---------------------
+// 0- IDET_ZAPIS				//	00- SVOBODEN	//	01- IDET_ZAPIS
+// 1- IDET_4TENIE				//	00- SVOBODEN	//	10- IDET_4TENIE
+// 2- empty
+// 3- IRQ_WR_READY
+// 4- IRQ_RD_READY
+
+reg	[31:0] reg_status;
+
+always @(posedge clk or negedge reset_n)
+	begin
+		if(reset_n == 1'b0)
+			begin
+				reg_status <= 32'b0;
+			end
+		else
+			begin
+				reg_status <= {30'b0,irq_rd,irq_wr,1'b0,status};
+			end
+	end
+	
 
 
+reg	irq_wr;
+reg	irq_rd;
 
+always @(posedge clk or negedge reset_n)
+	begin
+		if(reset_n == 1'b0)
+			begin
+				irq_wr <= 1'b0;
+				irq_rd <= 1'b0;
+			end
+		else if(irq_reset == 1'b1)
+			begin
+				irq_wr <= 1'b0;
+				irq_rd <= 1'b0;
+			end
+		else
+			begin
+				if((irq_wr_enable == 1'b1) && (state_s == READ_END_S) && (transfer_complete == 1'b1))
+					begin
+						irq_wr <= 1'b1;
+					end
+				if((irq_rd_enable == 1'b1) && (state_s == WRITE_END_S) && (transfer_complete == 1'b1))
+					begin
+						irq_rd <= 1'b1;
+					end
+			end
+	end
+	
+	
+	
+	
+//reg	[31:0] irq;
 
+always @(posedge clk or negedge reset_n)
+	begin
+		if(reset_n == 1'b0)
+			begin
+				irq <= 1'b0;
+			end
+		else if(irq_reset == 1'b1)
+			begin
+				irq <= 1'b0;
+			end
+		else
+			begin
+				irq <= irq_wr || irq_rd;
+			end
+	end
+		
+
+		
 /////////////////////////////////////////////////////////////////////////////////////////
 ////// videliaem front dlitelnost`u 1 takt iz  "data_pack_ready" ///////////////////////
 //-------------------------------------------------------------------------------------//
 /////////////////////////////////////////////////////////////////////////////////////////
-
-
+		
 reg	spi_trans_compl;
 reg	delay_spi_trans_compl;
 
@@ -534,6 +650,22 @@ always @(posedge clk or negedge reset_n)
 
 wire	transfer_complete;
 assign transfer_complete = (reset_n == 0) ? (1'b0) : (~delay_spi_trans_compl & spi_trans_compl);
+		
+
+
+//////////////////////////////////////////////////////////
+////////////////// __ ///////////////////////
+////----------------------------------------------------//
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+
 	
 
 	
@@ -566,31 +698,33 @@ assign transfer_complete = (reset_n == 0) ? (1'b0) : (~delay_spi_trans_compl & s
 //			end
 //	end
 
+//
+//reg	go_tr_delay_1;
+//reg	go_tr_delay_2;
+//reg	go_tr_delay_3;
+//reg	go_tr_delay_4;
 
-reg	go_tr_delay_1;
-reg	go_tr_delay_2;
-reg	go_tr_delay_3;
-reg	go_tr_delay_4;
-
-always @(posedge clk or negedge reset_n)
-	begin
-		if(reset_n == 1'b0)
-			begin
-				go_tr_delay_1 <= 1'b0;
-				go_tr_delay_2 <= 1'b0;
-				go_tr_delay_3 <= 1'b0;
-				go_tr_delay_4 <= 1'b0;
-			end
-		else
-			begin
-				go_tr_delay_1 <= go_write;
-				go_tr_delay_2 <= go_tr_delay_1;
-				go_tr_delay_3 <= go_tr_delay_2;
-				go_tr_delay_4 <= go_tr_delay_3;
-				go_transfer <= (~go_tr_delay_4 & go_write);
-			end
-	end
-
+//always @(posedge clk or negedge reset_n)
+//	begin
+//		if(reset_n == 1'b0)
+//			begin
+////				go_tr_delay_1 <= 1'b0;
+////				go_tr_delay_2 <= 1'b0;
+////				go_tr_delay_3 <= 1'b0;
+////				go_tr_delay_4 <= 1'b0;
+//				go_transfer <= 1'b0;
+//			end
+//		else
+//			begin
+////				go_tr_delay_1 <= go_write;
+//				go_transfer <= go_write;
+////				go_tr_delay_2 <= go_tr_delay_1;
+////				go_tr_delay_3 <= go_tr_delay_2;
+////				go_tr_delay_4 <= go_tr_delay_3;
+////				go_transfer <= (~go_tr_delay_4 & go_write);
+//			end
+//	end
+//
 
 
 //wire	go_transfer;
