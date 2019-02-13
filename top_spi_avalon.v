@@ -23,6 +23,7 @@ module top_spi_avalon (
 	flag_st_a,
 	
 	test_go_transfer,
+	test_go_tr,
 	test_wr_fifo_empty
 //	test_transfer_complete,
 //	test_rd_fifo_empty
@@ -31,6 +32,9 @@ module top_spi_avalon (
 output	test_go_transfer;
 wire	test_go_transfer;
 assign	test_go_transfer = wr_fifo_wrreq;
+
+output	test_go_tr;
+wire	test_go_tr;
 //
 //
 output	test_wr_fifo_empty;
@@ -124,6 +128,7 @@ avalon_slave avalon_slave_inst
 	.write_data(av_write_data) ,	// input [31:0] write_data_sig
 	.data_write_to_spi(data_write_to_spi), 	// output [31:0] data_write_to_spi_sig
 	.irq(irq),
+	.go_tr(test_go_tr),
 	.flag_st_a(flag_st_a)
 );
 

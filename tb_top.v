@@ -61,6 +61,7 @@ top_spi_avalon i1 (
 //	.test_transfer_complete(test_transfer_complete),
 //	.test_rd_fifo_empty(test_rd_fifo_empty),
 	.irq(irq),
+	.test_go_tr(test_go_tr),
 //	.test_clk_50MHz(test_clk_50MHz),
 //	.test_clk_50MHz_shift(test_clk_50MHz_shift),
 //	.test_clk_120MHz(test_clk_120MHz),
@@ -242,7 +243,7 @@ initial
       @(posedge clk_120MHz);
 		
 	av_address <= 8'h00;
-	av_write_data <= 32'b10;
+	av_write_data <= 32'b10010;
 	
 	@(posedge clk_120MHz)
       av_write <= 1'b1;
@@ -301,7 +302,8 @@ initial
 	repeat(40)
       @(posedge clk_120MHz);
 	
-	av_address <= 8'h04;	
+	av_address <= 8'h03;	
+      @(posedge clk_120MHz);
 	av_read <= 1'b1;
 	
     @(negedge av_wait_request)
@@ -311,6 +313,27 @@ initial
 					av_read <= 1'b0;
 				end
 		end
+
+
+	repeat(40)
+      @(posedge clk_120MHz);
+		
+	av_address <= 8'h00;
+	av_write_data <= 32'b100;
+	
+	@(posedge clk_120MHz)
+      av_write <= 1'b1;
+    @(negedge av_wait_request)
+      begin
+			@(posedge clk_120MHz)
+				begin
+					av_write <= 1'b0;
+				end
+		end
+		
+
+
+
 		
 //	repeat(200)
 //      @(posedge clk_120MHz);

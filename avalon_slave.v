@@ -73,6 +73,7 @@ module avalon_slave (
 	write_data,
 	data_write_to_spi,
 	irq,
+	go_tr,
 	flag_st_a
 );
 
@@ -111,6 +112,7 @@ output	wire			go_transfer;
 
 output	transfer_complete;
 output	[2:0]	flag_st_a;
+output	go_tr;
 
 
 assign go_transfer = go_write || go_read;
@@ -249,8 +251,8 @@ localparam [1:0] av_READ   	= 3;
 reg	[2:0]	flag_st_a;	
 
 // Output depends only on the state
-	always @ (state_a) 
-//	always @ (posedge clk) 
+//	always @ (state_a) 
+	always @ (posedge clk) 
 		begin
 			case (state_a)
 				av_RESET:
@@ -531,13 +533,28 @@ reg	[31:0] reg_data_read;
 					end
 				WRITE_END_S:
 					begin
-						status <= 2'b01;
 						go_tr <= 1'b0;
+						if(transfer_complete == 1'b1)
+							begin
+								status <= 2'b11;
+							end
+						else
+							begin
+								status <= 2'b01;
+							end
 					end
 				READ_END_S:
 					begin
-						status <= 2'b10;
 						go_tr <= 1'b0;
+						if(transfer_complete == 1'b1)
+							begin
+								status <= 2'b11;
+								reg_data_read <= data_read_from_spi;
+							end
+						else
+							begin
+								status <= 2'b10;
+							end
 					end
 				default:
 					begin
@@ -569,7 +586,7 @@ always @(posedge clk or negedge reset_n)
 			end
 		else
 			begin
-				reg_status <= {30'b0,irq_rd,irq_wr,1'b0,status};
+				reg_status <= {27'b0,irq_rd,irq_wr,1'b0,status};
 			end
 	end
 	
@@ -592,11 +609,11 @@ always @(posedge clk or negedge reset_n)
 			end
 		else
 			begin
-				if((irq_wr_enable == 1'b1) && (state_s == READ_END_S) && (transfer_complete == 1'b1))
+				if((irq_wr_enable == 1'b1) && (status == 2'b11))
 					begin
 						irq_wr <= 1'b1;
 					end
-				if((irq_rd_enable == 1'b1) && (state_s == WRITE_END_S) && (transfer_complete == 1'b1))
+				if((irq_rd_enable == 1'b1) && (status == 2'b11))
 					begin
 						irq_rd <= 1'b1;
 					end
