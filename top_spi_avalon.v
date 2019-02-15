@@ -199,5 +199,42 @@ wire	rd_fifo_rdreq;
 	);
 
 
+	
+	
+////////////////////////			
+///////// reset ///////
+//
+//	assign 	reset = hard_reset & !reset_from_pc;
+//
+//	reg [5:0]	cnt_reset_pc;
+//	reg			reset_from_pc;
+//
+//	always @(posedge clk_from_fpga or negedge hard_reset)
+//		begin
+//			if (hard_reset == 1'b0)
+//				begin
+//					reset_from_pc <= 1'b0;
+//					cnt_reset_pc <= 6'd0;
+//				end
+//			else
+//				begin
+//					if (cnt_reset_pc > 6'd0)
+//						begin
+//							cnt_reset_pc <= cnt_reset_pc - 1'b1;
+//							reset_from_pc <= 1'b1;
+//						end
+//					else
+//						begin
+//							reset_from_pc <= 1'b0;
+//							if(cmd_reset == 1)	// po prihody komandi na "reset" c4et4ik ystanavlivaetsia 
+//								begin					//			v "63" i idet obratnii ots4et
+//									cnt_reset_pc <= 6'd63; 
+//								end
+//						end
+//				end
+//		end
+//
+//	
+
 
 endmodule

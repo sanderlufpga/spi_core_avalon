@@ -1,6 +1,9 @@
+
+
 ///////////////////////////////////////////////////////////
 ////////////////////// REGISTERS //////////////////////////
 ///////////////////////////////////////////////////////////
+
 
 
 //---------------------
@@ -25,7 +28,6 @@
 // 2- empty
 // 3- IRQ_WR_READY
 // 4- IRQ_RD_READY
-
 
 
 //---------------------
@@ -54,15 +56,18 @@
 
 
 
+///////////////////////////////////////////////////////////////////////////////////////
+//-----------------------------------------------------------------------------------//
+///////////////////////////////////////////////////////////////////////////////////////
+
+
+
 module avalon_slave (
 
 	clk,reset_n,
 	address,
-// be_n, 
 	chip_select,
 	wait_request,
-//	wait_request_2,
-//	wait_request_3,
 	go_transfer,
 	data_pack_ready,
 	read,
@@ -84,9 +89,6 @@ input		chip_select;
 
 input		[7:0]	address;
 
-// obi4no addressacia bait	///
-//input		[3:0]	be_n;
-
 // write Avalon 
 input		write;
 input		[31:0]	write_data;
@@ -97,8 +99,6 @@ output	reg	[31:0]	read_data;
 
 // output Avalon
 output	wire		wait_request;
-//output	wire		wait_request_2;
-//output	wire		wait_request_3;
 
 
 //	from SPI
@@ -115,16 +115,10 @@ output	[2:0]	flag_st_a;
 output	go_tr;
 
 
-assign go_transfer = go_write || go_read;
-//assign go_transfer = go_tr;
+//assign go_transfer = go_write || go_read;
+assign go_transfer = go_tr;
 
 assign data_write_to_spi = reg_data_write;
-
-
-///////////////////////////////////////////////////////////////////////////////////////
-//assign wait_request_2 = !(!(read|write) & (cmd_state == IDLE));
-//assign wait_request_3 = ((read|write) & (cmd_state == IDLE));	
-///////////////////////////////////////////////////////////////////////////////////////
 
 
 
@@ -305,13 +299,13 @@ always @(posedge clk or negedge reset_n)
 				reg_data_write <= 32'b0;
 				read_data <= 32'b0;
 			end
-		else	if(delay_go_write == 1'b1)
-//		else	if(go_write == 1'b1)
+//		else	if(delay_go_write == 1'b1)
+		else	if(go_write == 1'b1)
 			begin
 				reg_control[0] <= 1'b0;	// sbros 'cmd_wr' po "go_write"
 			end
-		else	if(delay_go_read == 1'b1)
-//		else	if(go_read == 1'b1)
+//		else	if(delay_go_read == 1'b1)
+		else	if(go_read == 1'b1)
 			begin
 				reg_control[1] <= 1'b0;	// sbros 'cmd_rd' po "go_read"
 			end
@@ -399,50 +393,51 @@ assign go_read = (reset_n == 0) ? (1'b0) : (~delay_flag_rd_2 & delay_flag_rd_1);
 ///// irq_enable ///////
 ////////////////////////
 // reg_control [..]
+// 2- IRQ_RESET
 // 3- IRQ_WR_ENABLE
 // 4- IRQ_RD_ENABLE
+reg irq_reset;
 reg irq_wr_enable;
 reg irq_rd_enable;
-reg irq_reset;
 
 always @(posedge clk or negedge reset_n)
 	begin
 		if(reset_n == 1'b0)
 			begin
+				irq_reset <= 1'b0; 
 				irq_wr_enable <= 1'b0; 
 				irq_rd_enable <= 1'b0; 
-				irq_reset <= 1'b0; 
 			end
 		else
 			begin
+				irq_reset <= reg_control[2];
 				irq_wr_enable <= reg_control[3];
 				irq_rd_enable <= reg_control[4];
-				irq_reset <= reg_control[2];
 			end
 	end
 
 	
 	
-///////////////////////////////////////////////
-/// 'delay_go_read' or 'delay_go_write' ///////
-///////////////////////////////////////////////
-
-reg delay_go_write;
-reg delay_go_read;
-
-always @(posedge clk or negedge reset_n)
-	begin
-		if(reset_n == 1'b0)
-			begin
-				delay_go_write <= 1'b0; 
-				delay_go_read <= 1'b0; 
-			end
-		else
-			begin
-				delay_go_write <= go_write;
-				delay_go_read <= go_read;
-			end
-	end
+/////////////////////////////////////////////////
+///// 'delay_go_read' or 'delay_go_write' ///////
+/////////////////////////////////////////////////
+//
+//reg delay_go_write;
+//reg delay_go_read;
+//
+//always @(posedge clk or negedge reset_n)
+//	begin
+//		if(reset_n == 1'b0)
+//			begin
+//				delay_go_write <= 1'b0; 
+//				delay_go_read <= 1'b0; 
+//			end
+//		else
+//			begin
+//				delay_go_write <= go_write;
+//				delay_go_read <= go_read;
+//			end
+//	end
 
 
 //////////////////////////
@@ -460,7 +455,6 @@ always @(posedge clk or negedge reset_n)
 // Declare state register
 reg	[2:0] state_s;
 reg	[1:0] status;
-//	reg	data_rd_rdy;
 	
 // Declare states
 localparam [2:0] RESET_S		= 0;
@@ -680,17 +674,12 @@ assign transfer_complete = (reset_n == 0) ? (1'b0) : (~delay_spi_trans_compl & s
 
 
 
-
-
-
-	
-
 	
 	
 ////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////
-//		if (chip_select == 1'b0)
+//		if ()
 //			begin
 //				//
 //			end
@@ -698,204 +687,7 @@ assign transfer_complete = (reset_n == 0) ? (1'b0) : (~delay_spi_trans_compl & s
 ////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-//reg	go_tr_delay_1;
-//reg	go_tr_delay_2;
-//
-//always @(posedge clk or negedge reset_n)
-//	begin
-//		if(reset_n == 1'b0)
-//			begin
-//				go_tr_delay_1 <= 1'b0;
-//				go_tr_delay_2 <= 1'b0;
-//			end
-//		else
-//			begin
-//				go_tr_delay_1 <= go_tr;
-//				go_tr_delay_2 <= go_tr_delay_1;
-//			end
-//	end
-
-//
-//reg	go_tr_delay_1;
-//reg	go_tr_delay_2;
-//reg	go_tr_delay_3;
-//reg	go_tr_delay_4;
-
-//always @(posedge clk or negedge reset_n)
-//	begin
-//		if(reset_n == 1'b0)
-//			begin
-////				go_tr_delay_1 <= 1'b0;
-////				go_tr_delay_2 <= 1'b0;
-////				go_tr_delay_3 <= 1'b0;
-////				go_tr_delay_4 <= 1'b0;
-//				go_transfer <= 1'b0;
-//			end
-//		else
-//			begin
-////				go_tr_delay_1 <= go_write;
-//				go_transfer <= go_write;
-////				go_tr_delay_2 <= go_tr_delay_1;
-////				go_tr_delay_3 <= go_tr_delay_2;
-////				go_tr_delay_4 <= go_tr_delay_3;
-////				go_transfer <= (~go_tr_delay_4 & go_write);
-//			end
-//	end
-//
-
-
-//wire	go_transfer;
-//assign go_transfer = (reset_n == 0) ? (1'b0) : (~go_tr_delay_4 & go_write);
-//assign go_transfer = (reset_n == 0) ? (1'b0) : (go_write || go_read);
-
-//////////////////////////////////
-////	STATE
-////------------------------------------------------------
-//reg        [2:0] cmd_state;
-//
-//localparam [2:0] IDLE          		= 0;
-//localparam [2:0] WRITE  				= 1;
-//localparam [2:0] WRITE_CMD_READ  	= 2;
-//localparam [2:0] READ   				= 3;
-//localparam [2:0] READ_STATUS_REG    = 4;
-//
-//reg	flag_transfer;
-//
-//always @(posedge clk or negedge reset_n)
-//	begin
-//		if(reset_n == 1'b0)
-//			begin
-//				//obnuliaem vse
-//				cmd_state      <=  IDLE;
-//				flag_transfer <= 1'b0;
-//				read_data <= 32'b0;
-//////			data_write_to_spi <= 32'b0;
-//				status_reg <= svoboden;
-//				irq <= 1'b0;
-//			end
-//		else
-//			begin
-//				case (cmd_state)
-//					IDLE : 
-//						begin
-//							if (wr == 1'b1)
-//								begin
-//									if (address == 8'hff)
-//										begin
-//											cmd_state <=  WRITE_CMD_READ;
-//											flag_transfer <= 1'b1;
-//////										data_write_to_spi <= 32'b0;
-//											status_reg <= idet_4tenie;
-//										end
-//									else
-//										begin
-//											cmd_state <= WRITE;
-//											flag_transfer <= 1'b1;
-//////										data_write_to_spi <= write_data;
-//											status_reg <= idet_zapis;
-//										end
-//								end
-//							if (rd == 1'b1)
-//								begin
-//									if (address == 8'hff)
-//										begin
-//											cmd_state      <=  READ_STATUS_REG;
-////											flag_transfer <= 1'b1;
-////ili dage tak 						flag_transfer <= 1'b0;
-//											read_data [31:0] <= {{4{status_reg}},16'b0,{4{status_reg}}};
-//										end
-//									else if(status_reg == data_read_ready) //proverka yslovia nado? ili eto reshaet kontroller
-//										begin
-//											cmd_state      <=  READ;
-////											flag_transfer <= 1'b1;
-//											irq <= 1'b0; // zaberi dannie
-//										end
-//								end
-//							if (status_reg == idet_4tenie && transfer_complete == 1'b1)
-//								begin
-//									// gotovi dannie dlia 4tenia
-//									read_data <= data_read_from_spi;
-//									status_reg <= data_read_ready; 
-//									// zaberi dannie
-//									irq <= 1'b1; 
-//								end
-//							if (status_reg == idet_zapis && transfer_complete == 1'b1)
-//								begin
-//									status_reg <= svoboden;
-//									// nado irq viveshivat` ili net???
-//									// vrode i ne nado
-////									irq <= 1'b1; // dannie zapisani
-//									// dlitelnost irq????
-//								end
-//						end
-//						
-//					WRITE : 
-//						begin
-//							cmd_state      <=  IDLE;
-//							flag_transfer <= 1'b0;
-//							status_reg <= idet_zapis; // nado li ono?
-//						end             
-//					WRITE_CMD_READ : 
-//						begin
-//							cmd_state      <=  IDLE;
-//							flag_transfer <= 1'b0;
-//							status_reg <= idet_4tenie; // pod voprosom
-//						end             
-//					READ : 
-//						begin
-//							cmd_state      <=  IDLE;
-//							flag_transfer <= 1'b0;
-//							status_reg <= svoboden;
-//						end             
-//					READ_STATUS_REG : 
-//						begin
-//							cmd_state      <=  IDLE;
-//							flag_transfer <= 1'b0;
-////							status_reg <= status_reg; // nado li tak pisat`????
-//						end 
-//						
-//					default :
-//						begin
-//							cmd_state      <=  IDLE;
-//							flag_transfer <= 1'b0;
-//							status_reg <= svoboden;
-//						end
-//				endcase
-//			end
-//	end
 	
-
-
-	
-/////////////////////////////			
-///////// go_transfer ///////
-//
-//	reg [2:0]	cnt_go_transfer;
-//
-//	always @(posedge clk or negedge reset_n)
-//		begin
-//			if (reset_n == 1'b0)
-//				begin
-//					go_transfer <= 1'b0;
-//					cnt_go_transfer <= 3'd0;
-//				end
-//			else
-//				begin
-//					if (cnt_go_transfer > 3'd0)
-//						begin
-//							cnt_go_transfer <= cnt_go_transfer - 1'b1;
-//							go_transfer <= 1'b1;
-//						end
-//					else
-//						begin
-//							go_transfer <= 1'b0;
-//							if(flag_transfer == 1)	// po prihody komandi na c4et4ik ystanavlivaetsia 
-//								begin						//			v "7" i idet obratnii ots4et
-//									cnt_go_transfer <= 3'd7; 
-//								end
-//						end
-//				end
-//		end
 
 
 endmodule

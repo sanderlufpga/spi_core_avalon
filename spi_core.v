@@ -191,7 +191,6 @@ always @(posedge clk or negedge reset_n)
 				data_spi_read <= 8'b0;
 				cnt_bit <= 4'b0;
 				takt_transfer <= 1'b0;
-//				transfer_complete <= 1'b0;
 				data_read_to_avalon <= 32'b0;
 			end
 		else
@@ -220,7 +219,6 @@ always @(posedge clk or negedge reset_n)
 							begin
 								ss <= 1'b0;
 								takt_transfer <= 1'b0;
-//								transfer_complete <= 1'b1;
 								case(cnt_transfer)
 									3'd4:
 										data_read_to_avalon[7:0] <= data_spi_read[7:0];
@@ -239,48 +237,10 @@ always @(posedge clk or negedge reset_n)
 						ss <= 1'b0;
 						cnt_bit 	<= 4'b0;
 						takt_transfer <= 1'b0;
-//						transfer_complete <= 1'b0;
 					end
 			end
 		//
 	end
 	
-
-	
-	
-////////////////////////			
-///////// reset ///////
-//
-//	assign 	reset = hard_reset & !reset_from_pc;
-//
-//	reg [5:0]	cnt_reset_pc;
-//	reg			reset_from_pc;
-//
-//	always @(posedge clk_from_fpga or negedge hard_reset)
-//		begin
-//			if (hard_reset == 1'b0)
-//				begin
-//					reset_from_pc <= 1'b0;
-//					cnt_reset_pc <= 6'd0;
-//				end
-//			else
-//				begin
-//					if (cnt_reset_pc > 6'd0)
-//						begin
-//							cnt_reset_pc <= cnt_reset_pc - 1'b1;
-//							reset_from_pc <= 1'b1;
-//						end
-//					else
-//						begin
-//							reset_from_pc <= 1'b0;
-//							if(cmd_reset == 1)	// po prihody komandi na "reset" c4et4ik ystanavlivaetsia 
-//								begin					//			v "63" i idet obratnii ots4et
-//									cnt_reset_pc <= 6'd63; 
-//								end
-//						end
-//				end
-//		end
-//
-//	
 
 endmodule
