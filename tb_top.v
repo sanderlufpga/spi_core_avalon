@@ -17,7 +17,7 @@ reg [7:0]	av_address;
 //reg clk_50MHz;
 reg clk_120MHz;
 reg miso;
-reg reset_n;
+reg hard_reset;
 reg [31:0]  av_write_data;
 // wires                                               
 wire [31:0]  av_read_data;
@@ -51,7 +51,7 @@ top_spi_avalon i1 (
 	.clk_120MHz(clk_120MHz),
 	.miso(miso),
 	.mosi(mosi),
-	.reset_n(reset_n),
+	.hard_reset(hard_reset),
 	.sclk_25MHz(sclk_25MHz),
 	.ss_n(ss_n),
 	.clk_50MHz(clk_50MHz),
@@ -114,9 +114,9 @@ initial
 	
 	initial //clock generator
 		begin
-			reset_n = 1;
-			 # 2000 reset_n = 0;
-			 # 170000 reset_n = 1;
+			hard_reset = 1;
+			 # 2000 hard_reset = 0;
+			 # 170000 hard_reset = 1;
 		end	
 
 //	initial //clock generator
@@ -140,7 +140,7 @@ initial
 //      reset_n <= 1'b0;
 //    @(posedge clk_120MHz)
 //      reset_n <= 1'b1;
-	   @(posedge reset_n) 
+	   @(posedge hard_reset) 
 			repeat(120)
 			@(posedge clk_120MHz);
 
@@ -331,6 +331,21 @@ initial
 				end
 		end
 		
+	repeat(140)
+      @(posedge clk_120MHz);
+		
+	av_address <= 8'h04;
+	av_write_data <= 32'h_a5_a5_a5_a5;
+	
+	@(posedge clk_120MHz)
+      av_write <= 1'b1;
+    @(negedge av_wait_request)
+      begin
+			@(posedge clk_120MHz)
+				begin
+					av_write <= 1'b0;
+				end
+		end
 
 
 

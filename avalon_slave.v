@@ -51,7 +51,7 @@
 //---------------------
 // ADDRESS --0x04--
 //---------------------
-// CMD_RESET == 32'b_a5_a5_a5_a5;
+// CMD_RESET == 32'h_a5_a5_a5_a5;
 
 
 
@@ -64,7 +64,8 @@
 
 module avalon_slave (
 
-	clk,reset_n,
+	clk,hard_reset,
+	reset_n,
 	address,
 	chip_select,
 	wait_request,
@@ -84,7 +85,7 @@ module avalon_slave (
 
 // input Avalon 
 input		clk;
-input		reset_n;
+input		hard_reset;
 input		chip_select;
 
 input		[7:0]	address;
@@ -99,6 +100,7 @@ output	reg	[31:0]	read_data;
 
 // output Avalon
 output	wire		wait_request;
+output	wire		reset_n;
 
 
 //	from SPI
@@ -267,6 +269,10 @@ reg	[2:0]	flag_st_a;
 							begin
 								flag_st_a <= 3'b011;
 							end
+						if(address == 8'h4)
+							begin
+								flag_st_a <= 3'b111;
+							end
 					end
 				av_READ:
 					begin
@@ -290,6 +296,7 @@ reg	[2:0]	flag_st_a;
 		
 reg	[31:0] reg_control;
 reg	[31:0] reg_data_write;
+reg	[31:0] reg_cmd_reset;
 		
 always @(posedge clk or negedge reset_n)
 	begin
@@ -298,6 +305,7 @@ always @(posedge clk or negedge reset_n)
 				reg_control <= 32'b0;
 				reg_data_write <= 32'b0;
 				read_data <= 32'b0;
+				reg_cmd_reset <= 32'b0;
 			end
 //		else	if(delay_go_write == 1'b1)
 		else	if(go_write == 1'b1)
@@ -331,6 +339,10 @@ always @(posedge clk or negedge reset_n)
 					3'b101: 
 						begin
 							read_data <= reg_data_read;
+						end
+					3'b111: 
+						begin
+							reg_cmd_reset <= write_data; // cmd_RESET == 32'h_a5_a5_a5_a5;
 						end
 				endcase
 			end
@@ -662,6 +674,49 @@ always @(posedge clk or negedge reset_n)
 wire	transfer_complete;
 assign transfer_complete = (reset_n == 0) ? (1'b0) : (~delay_spi_trans_compl & spi_trans_compl);
 		
+
+	
+//////////////////////////////////////////////////////////
+///////////////////// CMD_RESET //////////////////////////
+////----------------------------------------------------//
+//////////////////////////////////////////////////////////
+
+
+// reg_cmd_reset // 
+// CMD_RESET == 32'h_a5_a5_a5_a5;
+
+assign 	reset_n = hard_reset & !cmd_RESET;
+
+reg [5:0]	cnt_rst;
+reg			cmd_RESET;
+
+always @(posedge clk or negedge hard_reset)
+	begin
+		if (hard_reset == 1'b0)
+			begin
+				cmd_RESET <= 1'b0;
+				cnt_rst <= 6'd0;
+			end
+		else
+			begin
+				if (cnt_rst > 6'd0)
+					begin
+						cnt_rst <= cnt_rst - 1'b1;
+						cmd_RESET <= 1'b1;
+					end
+				else
+					begin
+						cmd_RESET <= 1'b0;
+						if(reg_cmd_reset == 32'h_a5_a5_a5_a5)	// po prihody komandi na "reset" c4et4ik ystanavlivaetsia 
+							begin											//			v "63" i idet obratnii ots4et
+								cnt_rst <= 6'd63; 
+							end
+					end
+			end
+	end
+
+	
+
 
 
 //////////////////////////////////////////////////////////

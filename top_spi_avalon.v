@@ -1,7 +1,7 @@
 module top_spi_avalon (
 
 	clk_120MHz,
-	reset_n,
+	hard_reset,
 	// Avalon_MM
 	av_address,
 //	av_be_n,
@@ -53,7 +53,7 @@ assign	test_wr_fifo_empty = wr_fifo_empty;
 
 
 input		clk_120MHz;
-input		reset_n;
+input		hard_reset;
 
 // input Avalon 
 input		av_chip_select;
@@ -96,6 +96,7 @@ wire	[2:0]	flag_st_a;
 
 wire	clk_120MHz;
 wire	clk_50MHz;
+wire	reset_n;
 
 
 /////////////////////////////////////
@@ -111,6 +112,7 @@ pll	pll_inst
 avalon_slave avalon_slave_inst
 (
 	.clk(clk_120MHz) ,	// input  clk_sig
+	.hard_reset(hard_reset) ,	// input  reset_n_sig
 	.reset_n(reset_n) ,	// input  reset_n_sig
 	.address(av_address),	
 //	.be_n(av_be_n), 			
@@ -197,44 +199,6 @@ wire	rd_fifo_rdreq;
 	.q(data_read_from_spi),
 	.rdempty(rd_fifo_empty)
 	);
-
-
-	
-	
-////////////////////////			
-///////// reset ///////
-//
-//	assign 	reset = hard_reset & !reset_from_pc;
-//
-//	reg [5:0]	cnt_reset_pc;
-//	reg			reset_from_pc;
-//
-//	always @(posedge clk_from_fpga or negedge hard_reset)
-//		begin
-//			if (hard_reset == 1'b0)
-//				begin
-//					reset_from_pc <= 1'b0;
-//					cnt_reset_pc <= 6'd0;
-//				end
-//			else
-//				begin
-//					if (cnt_reset_pc > 6'd0)
-//						begin
-//							cnt_reset_pc <= cnt_reset_pc - 1'b1;
-//							reset_from_pc <= 1'b1;
-//						end
-//					else
-//						begin
-//							reset_from_pc <= 1'b0;
-//							if(cmd_reset == 1)	// po prihody komandi na "reset" c4et4ik ystanavlivaetsia 
-//								begin					//			v "63" i idet obratnii ots4et
-//									cnt_reset_pc <= 6'd63; 
-//								end
-//						end
-//				end
-//		end
-//
-//	
 
 
 endmodule
